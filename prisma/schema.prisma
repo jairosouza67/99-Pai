@@ -1,0 +1,286 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Role {
+  elderly
+  caregiver
+  provider
+  admin
+}
+
+enum Platform {
+  ios
+  android
+  web
+}
+
+enum InteractionType {
+  voice
+  button
+}
+
+enum ServiceRequestStatus {
+  pending
+  accepted
+  rejected
+  completed
+  cancelled
+}
+
+// ============================================================================
+// USER MODEL (merged from 99por1 + PAI)
+// ============================================================================
+
+model user {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      Role
+  cellphone String?   @unique
+  nickname  String?
+  document  String?
+  birthday  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  elderlyProfile   elderlyprofile?
+  caregiverLinks   caregiverlink[]
+  pushTokens       pushtoken[]
+  offerings        offering[]
+  offeringContacts offeringcontact[]
+}
+
+// ============================================================================
+// 99por1 MODELS
+// ============================================================================
+
+model elderlyprofile {
+  id                 String    @id @default(uuid())
+  userId             String    @unique
+  preferredName      String?
+  autonomyScore      Int?
+  interactionTimes   String[]  @default(["08:00", "12:00", "16:00", "19:00"])
+  location           String?
+  onboardingComplete Boolean   @default(false)
+  linkCode           String    @unique
+  lastInteractionAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user              user                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caregiverLinks    caregiverlink[]
+  medications       medication[]
+  medicationHistory medicationhistory[]
+  contacts          contact[]
+  callHistory       callhistory[]
+  agendaEvents      agendaevent[]
+  interactionLogs   interactionlog[]
+  serviceRequests   servicerequest[]
+
+  @@index([userId])
+  @@index([linkCode])
+}
+
+model caregiverlink {
+  id               String   @id @default(uuid())
+  caregiverUserId  String
+  elderlyProfileId String
+  createdAt        DateTime @default(now())
+
+  caregiver      user           @relation(fields: [caregiverUserId], references: [id], onDelete: Cascade)
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverUserId, elderlyProfileId])
+  @@index([caregiverUserId])
+  @@index([elderlyProfileId])
+}
+
+model medication {
+  id               String   @id @default(uuid())
+  elderlyProfileId String
+  name             String
+  time             String
+  dosage           String
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  elderlyProfile    elderlyprofile      @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+  medicationHistory medicationhistory[]
+
+  @@index([elderlyProfileId])
+  @@index([elderlyProfileId, active])
+}
+
+model medicationhistory {
+  id                String    @id @default(uuid())
+  elderlyProfileId  String
+  medicationId      String
+  confirmed         Boolean
+  scheduledDate     DateTime
+  respondedAt       DateTime?
+  retryCount        Int       @default(0)
+  caregiverNotified Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+  medication     medication     @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([elderlyProfileId, scheduledDate])
+  @@index([medicationId])
+}
+
+model contact {
+  id               String    @id @default(uuid())
+  elderlyProfileId String
+  name             String
+  phone            String
+  thresholdDays    Int       @default(7)
+  lastCallAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+  callHistory    callhistory[]
+
+  @@index([elderlyProfileId])
+}
+
+model callhistory {
+  id               String   @id @default(uuid())
+  elderlyProfileId String
+  contactId        String
+  calledAt         DateTime
+  createdAt        DateTime @default(now())
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+  contact        contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([elderlyProfileId, calledAt])
+}
+
+model agendaevent {
+  id               String   @id @default(uuid())
+  elderlyProfileId String
+  description      String
+  dateTime         DateTime
+  reminder         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+
+  @@index([elderlyProfileId, dateTime])
+}
+
+model pushtoken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String
+  platform  Platform
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+}
+
+model interactionlog {
+  id               String          @id @default(uuid())
+  elderlyProfileId String
+  type             InteractionType
+  createdAt        DateTime        @default(now())
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+
+  @@index([elderlyProfileId, createdAt])
+}
+
+// ============================================================================
+// PAI MODELS (converted from Java entities)
+// ============================================================================
+
+model category {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent        category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  subcategories category[] @relation("CategoryHierarchy")
+  offerings     offering[] @relation("OfferingCategory")
+  subOfferings  offering[] @relation("OfferingSubcategory")
+}
+
+model offering {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  imageUrl      String?
+  price         Decimal
+  active        Boolean  @default(true)
+  userId        String
+  categoryId    String
+  subcategoryId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        user              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    category          @relation("OfferingCategory", fields: [categoryId], references: [id])
+  subcategory category?         @relation("OfferingSubcategory", fields: [subcategoryId], references: [id])
+  contacts    offeringcontact[]
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([userId])
+}
+
+model offeringcontact {
+  id          String   @id @default(uuid())
+  offeringId  String
+  requesterId String
+  createdAt   DateTime @default(now())
+
+  offering  offering @relation(fields: [offeringId], references: [id], onDelete: Cascade)
+  requester user     @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([offeringId])
+  @@index([requesterId])
+}
+
+// ============================================================================
+// INTEGRATION MODELS
+// ============================================================================
+
+model servicerequest {
+  id                String               @id @default(uuid())
+  elderlyProfileId  String
+  offeringId        String
+  requestedDateTime DateTime?
+  status            ServiceRequestStatus @default(pending)
+  notes             String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  elderlyProfile elderlyprofile @relation(fields: [elderlyProfileId], references: [id], onDelete: Cascade)
+
+  @@index([elderlyProfileId])
+  @@index([status])
+}
