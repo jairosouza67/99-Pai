@@ -11,7 +11,7 @@
 | Task | Nome | Fase | Status | Notas |
 |------|------|------|--------|-------|
 | T0 | Git Init + Segurança de Credenciais | Fase 0 | `🔄 EM PROGRESSO` | 2026-03-31: git init + commit inicial + .env.example seguro + JWT_SECRET rotacionado localmente; pendente reset manual da senha Supabase |
-| T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `⬜ PENDENTE` | |
+| T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `❌ BLOQUEADO` | 2026-03-31: Prisma P1013 (URL invalida). .env ainda contem placeholders (<project-ref>/<NOVA-SENHA>/<region>); requer URLs reais validas |
 | T2 | Baseline Migration | Fase 1 | `⬜ PENDENTE` | |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `⬜ PENDENTE` | |
 | T4 | Rate Limiting + Helmet | Fase 1 | `⬜ PENDENTE` | |
@@ -120,7 +120,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081
 ## ⚡ TASK T1: SSL + Conexões Prisma/Supabase
 
 **Fase**: 1
-**Status**: `⬜ PENDENTE`
+**Status**: `❌ BLOQUEADO`
 **Depende de**: T0
 **Objetivo**: Configurar conexões corretas (pooler 6543 + direta 5432) com SSL.
 
