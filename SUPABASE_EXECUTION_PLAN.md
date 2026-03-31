@@ -10,7 +10,7 @@
 
 | Task | Nome | Fase | Status | Notas |
 |------|------|------|--------|-------|
-| T0 | Git Init + Segurança de Credenciais | Fase 0 | `⬜ PENDENTE` | |
+| T0 | Git Init + Segurança de Credenciais | Fase 0 | `🔄 EM PROGRESSO` | 2026-03-31: git init + commit inicial + .env.example seguro + JWT_SECRET rotacionado localmente; pendente reset manual da senha Supabase |
 | T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `⬜ PENDENTE` | |
 | T2 | Baseline Migration | Fase 1 | `⬜ PENDENTE` | |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `⬜ PENDENTE` | |
@@ -46,7 +46,7 @@
 ## ⚡ TASK T0: Git Init + Segurança de Credenciais
 
 **Fase**: 0 — URGENTE
-**Status**: `⬜ PENDENTE`
+**Status**: `🔄 EM PROGRESSO`
 **Objetivo**: Inicializar git, proteger credenciais, rotacionar segredos.
 
 ### Escopo
