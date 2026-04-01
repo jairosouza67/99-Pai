@@ -14,7 +14,7 @@
 | T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `❌ BLOQUEADO` | 2026-03-31: Prisma P1013 (URL invalida). .env ainda contem placeholders (<project-ref>/<NOVA-SENHA>/<region>); requer URLs reais validas |
 | T2 | Baseline Migration | Fase 1 | `⬜ PENDENTE` | |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: CORS por allowlist via env, Swagger dev-only e Logger NestJS; build OK |
-| T4 | Rate Limiting + Helmet | Fase 1 | `⬜ PENDENTE` | |
+| T4 | Rate Limiting + Helmet | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: @nestjs/throttler + helmet configurados globalmente; build OK |
 | T5 | PrismaService Hardening | Fase 1 | `⬜ PENDENTE` | |
 | T6 | Health Check Endpoint | Fase 1 | `⬜ PENDENTE` | |
 | T7 | Observabilidade + Security Fixes | Fase 1 | `⬜ PENDENTE` | |
@@ -308,7 +308,7 @@ git commit -m "security: harden main.ts — CORS allowlist, swagger dev-only, st
 ## ⚡ TASK T4: Rate Limiting + Helmet
 
 **Fase**: 1
-**Status**: `⬜ PENDENTE`
+**Status**: `✅ CONCLUÍDO`
 **Depende de**: T3
 **Objetivo**: Instalar e configurar proteções de rede.
 
