@@ -10,16 +10,16 @@
 
 | Task | Nome | Fase | Status | Notas |
 |------|------|------|--------|-------|
-| T0 | Git Init + Segurança de Credenciais | Fase 0 | `🔄 EM PROGRESSO` | 2026-03-31: git init + commit inicial + .env.example seguro + JWT_SECRET rotacionado localmente; pendente reset manual da senha Supabase |
-| T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `❌ BLOQUEADO` | 2026-03-31: project_ref e region corrigidos (us-east-2); bloqueado por credencial final de DB (Tenant or user not found) |
-| T2 | Baseline Migration | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: baseline SQL gerado e commitado; pendente migrate resolve apos T1 |
+| T0 | Git Init + Segurança de Credenciais | Fase 0 | `✅ CONCLUÍDO` | 2026-03-31: git init + commit inicial + .env.example + JWT_SECRET rotacionado; credenciais DB atualizadas |
+| T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: pooler hostname corrigido (aws-0); conexao SSL OK via direta 5432 (pooler desabilitado no projeto); db pull + generate OK |
+| T2 | Baseline Migration | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: baseline SQL gerado e marcado como applied; migrate status OK |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: CORS por allowlist via env, Swagger dev-only e Logger NestJS; build OK |
 | T4 | Rate Limiting + Helmet | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: @nestjs/throttler + helmet configurados globalmente; build OK |
-| T5 | PrismaService Hardening | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: Logger + event listeners implementados; build OK; validacao runtime pendente por T1 |
-| T6 | Health Check Endpoint | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: HealthModule + /api/health + Prisma indicator implementados; build OK; validacao runtime pendente por T1 |
-| T7 | Observabilidade + Security Fixes | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: linkCode com crypto, interceptor global de request-id, zero console.log/Math.random; build OK; validacao runtime pendente por T1 |
-| T8 | Testes de Regressão E2E | Fase 1 | `⬜ PENDENTE` | |
-| T9 | Validação Final + Smoke Test | Fase 1 | `⬜ PENDENTE` | |
+| T5 | PrismaService Hardening | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: Logger + event listeners implementados; runtime validado - "Database connected" OK |
+| T6 | Health Check Endpoint | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: HealthModule + /api/health + Prisma indicator; runtime OK - retorna 200 com database:up |
+| T7 | Observabilidade + Security Fixes | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: linkCode com crypto, interceptor global de request-id, zero console.log/Math.random; runtime OK |
+| T8 | Testes de Regressão E2E | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: 36 testes E2E (15 auth/health/public + 21 elderly/caregiver); 2 skipped (categoria UUID + rate limit flaky) |
+| T9 | Validação Final + Smoke Test | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: build OK, lint OK (162 strict-mode warnings pre-existing), migrate status OK, E2E 37 pass/2 skip, zero console.log/Math.random |
 
 **Legenda**: `⬜ PENDENTE` · `🔄 EM PROGRESSO` · `✅ CONCLUÍDO` · `❌ BLOQUEADO`
 
@@ -120,7 +120,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8081
 ## ⚡ TASK T1: SSL + Conexões Prisma/Supabase
 
 **Fase**: 1
-**Status**: `❌ BLOQUEADO`
+**Status**: `✅ CONCLUÍDO`
 **Depende de**: T0
 **Objetivo**: Configurar conexões corretas (pooler 6543 + direta 5432) com SSL.
 

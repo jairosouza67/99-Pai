@@ -67,10 +67,14 @@ describe('Auth, Health & Public Endpoints (E2E)', () => {
     }
 
     // Get first category ID for tests
-    const categoriesResponse = await request(app.getHttpServer())
-      .get('/api/categories');
+    const categoriesResponse = await request(app.getHttpServer()).get(
+      '/api/categories',
+    );
 
-    if (categoriesResponse.status === 200 && categoriesResponse.body?.length > 0) {
+    if (
+      categoriesResponse.status === 200 &&
+      categoriesResponse.body?.length > 0
+    ) {
       firstCategoryId = categoriesResponse.body[0].id;
     }
   }, 30000);

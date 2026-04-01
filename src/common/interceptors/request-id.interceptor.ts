@@ -17,7 +17,10 @@ export class RequestIdInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<RequestWithId>();
-    const response = context.switchToHttp().getResponse<{ setHeader: (name: string, value: string) => void; statusCode: number }>();
+    const response = context.switchToHttp().getResponse<{
+      setHeader: (name: string, value: string) => void;
+      statusCode: number;
+    }>();
 
     const incomingHeader = request.headers['x-request-id'];
     const incomingId = Array.isArray(incomingHeader)

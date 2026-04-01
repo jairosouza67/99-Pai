@@ -18,7 +18,24 @@
 - [src/contacts/dto/create-contact.dto.ts](file://src/contacts/dto/create-contact.dto.ts)
 - [src/medications/dto/create-medication.dto.ts](file://src/medications/dto/create-medication.dto.ts)
 - [test/app.e2e-spec.ts](file://test/app.e2e-spec.ts)
+- [.agent/ARCHITECTURE.md](file://.agent/ARCHITECTURE.md)
+- [.agent/mcp_config.json](file://.agent/mcp_config.json)
+- [mobile-app/README.md](file://mobile-app/README.md)
+- [mobile-app/README_FRONTEND.md](file://mobile-app/README_FRONTEND.md)
+- [mobile-app/API_CONTRACTS.md](file://mobile-app/API_CONTRACTS.md)
+- [mobile-app/INTEGRATION_GUIDE.md](file://mobile-app/INTEGRATION_GUIDE.md)
+- [mobile-app/TYPE_DEFINITIONS.md](file://mobile-app/TYPE_DEFINITIONS.md)
+- [API_DOCUMENTATION.md](file://API_DOCUMENTATION.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive AI agent system documentation with 20 specialist agents, 36 skills, and 11 workflows
+- Integrated mobile app development environment with React Native and Expo
+- Documented web documentation site architecture and API contracts
+- Expanded API architecture coverage to include 15 comprehensive modules
+- Added detailed mobile app integration guide and type definitions
+- Enhanced troubleshooting with AI agent system and mobile app considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -26,43 +43,64 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [AI Agent System](#ai-agent-system)
+7. [Mobile App Development Environment](#mobile-app-development-environment)
+8. [Web Documentation Site](#web-documentation-site)
+9. [Comprehensive API Architecture](#comprehensive-api-architecture)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
+14. [Appendices](#appendices)
 
 ## Introduction
-This guide helps you set up and run the 99-Pai API locally, configure the database, seed initial data, and explore the API via Swagger. The project is a NestJS application with Prisma ORM, Swagger/OpenAPI documentation, JWT authentication, and modular feature areas (elderly care, medications, agendas, offerings, etc.).
+This guide helps you set up and run the 99-Pai API locally, configure the database, seed initial data, and explore the API via Swagger. The project now features a comprehensive AI agent system with 20 specialist agents, a mobile app development environment using React Native and Expo, and a web documentation site. The API has evolved to a 15-module architecture covering elderly care, medications, agendas, offerings, marketplace services, and advanced AI capabilities.
 
 ## Project Structure
-The repository follows a NestJS monorepo-like layout under a single package with:
-- Application entry and configuration in src/
-- Feature modules under src/*/ (auth, elderly, medications, etc.)
-- Prisma schema and seed under prisma/
-- Build and test configuration in package.json and nest-cli.json
-- End-to-end tests under test/
+The repository now encompasses three major development environments under a single comprehensive project:
+- **Backend API**: NestJS application with 15 feature modules and Prisma ORM
+- **AI Agent System**: Modular AI toolkit with 20 agents, 36 skills, and 11 workflows
+- **Mobile App**: React Native application with Expo for elderly care management
+- **Web Documentation**: Unified API documentation and integration guides
 
 ```mermaid
 graph TB
-subgraph "Application"
+subgraph "Backend API (NestJS)"
 MAIN["src/main.ts"]
 APP["src/app.module.ts"]
 PRISMA_MOD["src/prisma/prisma.module.ts"]
 PRISMA_SRV["src/prisma/prisma.service.ts"]
 end
-subgraph "Features"
+subgraph "AI Agent System"
+AGENT_ARCH["agent/ARCHITECTURE.md"]
+AGENT_CFG["agent/mcp_config.json"]
+SKILLS["agents/, skills/, workflows/"]
+end
+subgraph "Mobile App"
+MOBILE_README["mobile-app/README.md"]
+MOBILE_INTEGRATION["mobile-app/INTEGRATION_GUIDE.md"]
+MOBILE_TYPES["mobile-app/TYPE_DEFINITIONS.md"]
+end
+subgraph "Documentation"
+API_DOCS["API_DOCUMENTATION.md"]
+WEB_DOCS["Web Docs Site"]
+end
+subgraph "Features (15 Modules)"
 AUTH["src/auth/*"]
 MEDS["src/medications/*"]
 CONTACTS["src/contacts/*"]
 AGENDA["src/agenda/*"]
 OFFERINGS["src/offerings/*"]
-OTHERS["Other feature modules"]
-end
-subgraph "Database"
-SCHEMA["prisma/schema.prisma"]
+CATEGORIES["src/categories/*"]
+SERVICES["src/service-requests/*"]
+WEATHER["src/weather/*"]
+NOTIFICATIONS["src/notifications/*"]
+INTERACTIONS["src/interactions/*"]
+ELDERLY["src/elderly/*"]
+CAREGIVER["src/caregiver/*"]
+HEALTH["src/health/*"]
+PRISMA_DB["Prisma Schema"]
 SEED["prisma/seed.ts"]
-CFG["prisma.config.ts"]
 end
 MAIN --> APP
 APP --> PRISMA_MOD
@@ -72,82 +110,110 @@ APP --> MEDS
 APP --> CONTACTS
 APP --> AGENDA
 APP --> OFFERINGS
-APP --> OTHERS
-PRISMA_SRV --> SCHEMA
-SEED --> SCHEMA
-CFG --> SCHEMA
+APP --> CATEGORIES
+APP --> SERVICES
+APP --> WEATHER
+APP --> NOTIFICATIONS
+APP --> INTERACTIONS
+APP --> ELDERLY
+APP --> CAREGIVER
+APP --> HEALTH
+PRISMA_SRV --> PRISMA_DB
+SEED --> PRISMA_DB
 ```
 
 **Diagram sources**
-- [src/main.ts:1-43](file://src/main.ts#L1-L43)
-- [src/app.module.ts:1-36](file://src/app.module.ts#L1-L36)
-- [src/prisma/prisma.module.ts:1-10](file://src/prisma/prisma.module.ts#L1-L10)
-- [src/prisma/prisma.service.ts:1-17](file://src/prisma/prisma.service.ts#L1-L17)
-- [prisma/schema.prisma:1-286](file://prisma/schema.prisma#L1-L286)
-- [prisma/seed.ts:1-365](file://prisma/seed.ts#L1-L365)
-- [prisma.config.ts:1-17](file://prisma.config.ts#L1-L17)
+- [src/main.ts:1-52](file://src/main.ts#L1-L52)
+- [src/app.module.ts:1-46](file://src/app.module.ts#L1-L46)
+- [.agent/ARCHITECTURE.md:1-289](file://.agent/ARCHITECTURE.md#L1-L289)
+- [mobile-app/README.md:1-105](file://mobile-app/README.md#L1-L105)
+- [API_DOCUMENTATION.md:1-363](file://API_DOCUMENTATION.md#L1-L363)
 
 **Section sources**
 - [README.md:24-99](file://README.md#L24-L99)
 - [nest-cli.json:1-9](file://nest-cli.json#L1-L9)
-- [src/app.module.ts:1-36](file://src/app.module.ts#L1-L36)
+- [src/app.module.ts:1-46](file://src/app.module.ts#L1-L46)
 
 ## Core Components
-- Application bootstrap and middleware:
-  - Global prefix, CORS, validation pipe, and Swagger setup are configured in the application entry.
-- Prisma integration:
-  - A global PrismaModule exposes PrismaService for database access across modules.
-- Authentication:
-  - AuthModule integrates Passport, JWT, and PrismaService; JWT secret is resolved from configuration.
-- Feature modules:
-  - Modularized by domain (e.g., auth, elderly, medications, contacts, agenda, offerings, etc.), imported into AppModule.
+The system now consists of three interconnected layers:
 
-Key configuration highlights:
-- Swagger endpoint path is exposed at docs.
-- Global prefix is api.
-- ValidationPipe enforces DTOs and transforms inputs.
+### Backend API Layer
+- **Application bootstrap and middleware**: Global prefix, CORS, validation pipe, and Swagger setup
+- **Prisma integration**: Global PrismaModule with database access across 15 modules
+- **Authentication**: JWT-based system with role-based access control
+- **Security**: Helmet integration and throttling protection
+
+### AI Agent System Layer
+- **20 Specialist Agents**: Role-based AI personas for different domains
+- **36 Skills**: Modular knowledge domains for on-demand loading
+- **11 Workflows**: Slash command procedures for automated tasks
+- **Model Context Protocol (MCP)**: Integration with external AI services
+
+### Mobile App Layer
+- **React Native + Expo**: Cross-platform mobile application
+- **Role-based dashboards**: Elderly, caregiver, provider, and admin interfaces
+- **JWT Authentication**: Secure token-based authentication
+- **Real-time integration**: Direct API connectivity with backend
 
 **Section sources**
-- [src/main.ts:6-41](file://src/main.ts#L6-L41)
-- [src/app.module.ts:17-35](file://src/app.module.ts#L17-L35)
-- [src/prisma/prisma.module.ts:1-10](file://src/prisma/prisma.module.ts#L1-L10)
-- [src/prisma/prisma.service.ts:1-17](file://src/prisma/prisma.service.ts#L1-L17)
-- [src/auth/auth.module.ts:1-28](file://src/auth/auth.module.ts#L1-L28)
+- [src/main.ts:6-52](file://src/main.ts#L6-L52)
+- [src/app.module.ts:17-46](file://src/app.module.ts#L17-L46)
+- [.agent/ARCHITECTURE.md:31-57](file://.agent/ARCHITECTURE.md#L31-L57)
+- [mobile-app/README_FRONTEND.md:13-216](file://mobile-app/README_FRONTEND.md#L13-L216)
 
 ## Architecture Overview
-High-level runtime flow:
-- Bootstrap initializes Nest application, sets global prefix, enables CORS, registers ValidationPipe, builds Swagger document, and starts listening on the configured port.
-- AppModule aggregates all feature modules and PrismaModule.
-- Feature modules depend on PrismaService for database operations.
+The comprehensive system operates through three coordinated layers:
+
+### Backend API Runtime Flow
+- Bootstrap initializes Nest application with global prefix, CORS, validation pipe, and Swagger
+- AppModule aggregates all 15 feature modules plus PrismaModule
+- Feature modules depend on PrismaService for database operations
+- AI agent system provides autonomous capabilities through MCP integration
+
+### AI Agent System Flow
+- User requests trigger skill-based agent responses
+- Agents load specialized skills on-demand
+- Workflows coordinate complex multi-step processes
+- Results integrate back into the main application
+
+### Mobile App Integration Flow
+- Expo application connects to backend API
+- JWT tokens handle authentication and authorization
+- Real-time data synchronization with backend services
+- Role-based interface adaptation
 
 ```mermaid
 sequenceDiagram
 participant Boot as "Bootstrap (src/main.ts)"
 participant App as "Nest Application"
 participant Swagger as "SwaggerModule"
-participant Port as "HTTP Port"
-Boot->>App : "Create app and set global prefix"
-Boot->>App : "Enable CORS"
-Boot->>App : "Register ValidationPipe"
-Boot->>Swagger : "Build document"
-Swagger-->>Boot : "Document ready"
-Boot->>Port : "Listen on configured port"
-Port-->>Boot : "Server running"
+participant Agent as "AI Agent System"
+participant Mobile as "Mobile App"
+Boot->>App : "Create app with 15 modules"
+Boot->>Agent : "Initialize MCP servers"
+Boot->>Swagger : "Build unified documentation"
+Agent->>App : "Provide autonomous capabilities"
+Mobile->>App : "API requests with JWT"
+App-->>Mobile : "JSON responses"
 ```
 
 **Diagram sources**
-- [src/main.ts:6-41](file://src/main.ts#L6-L41)
+- [src/main.ts:6-52](file://src/main.ts#L6-L52)
+- [.agent/mcp_config.json:1-25](file://.agent/mcp_config.json#L1-L25)
+- [mobile-app/README_FRONTEND.md:13-216](file://mobile-app/README_FRONTEND.md#L13-L216)
 
 **Section sources**
-- [src/main.ts:6-41](file://src/main.ts#L6-L41)
-- [src/app.module.ts:17-35](file://src/app.module.ts#L17-L35)
+- [src/main.ts:6-52](file://src/main.ts#L6-L52)
+- [src/app.module.ts:17-46](file://src/app.module.ts#L17-L46)
 
 ## Detailed Component Analysis
 
 ### Prisma Setup and Seed
-- Schema defines PostgreSQL datasource via DATABASE_URL and includes enums and models for users, elderly profiles, caregivers, medications, contacts, agendas, categories, offerings, and service requests.
-- Prisma configuration uses classic engine and reads datasource URL from environment.
-- Seed script creates test users (elderly, caregiver, provider, admin), links them, seeds hierarchical categories, sample offerings, medications, and agenda events.
+The database layer supports the comprehensive 15-module architecture with robust schema design:
+
+- **Schema**: PostgreSQL datasource with enums and models for users, elderly profiles, caregivers, medications, contacts, agendas, categories, offerings, and service requests
+- **Configuration**: Classic engine with environment-based datasource URL resolution
+- **Seed**: Comprehensive test data including hierarchical categories, marketplace offerings, and elderly care scenarios
 
 ```mermaid
 flowchart TD
@@ -156,7 +222,7 @@ CheckEnv --> EnvOK{"URL present?"}
 EnvOK --> |No| Fail["Fail: DATABASE_URL missing"]
 EnvOK --> |Yes| Generate["Generate Prisma Client"]
 Generate --> Migrate["Run migrations (if needed)"]
-Migrate --> Seed["Seed database (seed.ts)"]
+Migrate --> Seed["Seed database (365+ records)"]
 Seed --> Done(["Ready"])
 Fail --> Done
 ```
@@ -172,8 +238,11 @@ Fail --> Done
 - [prisma/seed.ts:1-365](file://prisma/seed.ts#L1-L365)
 
 ### Authentication and DTOs
-- AuthModule configures JWT using a secret from configuration and Passport strategies.
-- DTOs define request contracts for login and signup, including validation rules and Swagger annotations.
+The authentication system supports four distinct user roles with comprehensive validation:
+
+- **AuthModule**: JWT configuration with secret resolution from configuration
+- **DTOs**: Strict validation rules for login and signup with Swagger annotations
+- **Role-based access**: Decorators and guards for permission enforcement
 
 ```mermaid
 classDiagram
@@ -212,19 +281,137 @@ AuthModule --> SignupDto : "validates"
 - [src/auth/dto/signup.dto.ts:1-53](file://src/auth/dto/signup.dto.ts#L1-L53)
 
 ### Example DTOs for API Contracts
-- CreateContactDto validates contact creation inputs.
-- CreateMedicationDto validates medication creation inputs.
+Comprehensive API contracts for all 15 modules:
 
-These DTOs inform API consumers about payload expectations and constraints.
+- **CreateContactDto**: Validates contact creation inputs with threshold days
+- **CreateMedicationDto**: Validates medication creation with timing and dosage
+- **CreateAgendaDto**: Validates event scheduling with reminders
+- **CreateOfferingDto**: Validates marketplace service listings
 
 **Section sources**
 - [src/contacts/dto/create-contact.dto.ts:1-19](file://src/contacts/dto/create-contact.dto.ts#L1-L19)
 - [src/medications/dto/create-medication.dto.ts:1-17](file://src/medications/dto/create-medication.dto.ts#L1-L17)
 
+## AI Agent System
+The AI agent system provides comprehensive autonomous capabilities through a modular architecture:
+
+### Agent Architecture
+- **20 Specialist Agents**: Role-based AI personas for different domains
+- **36 Skills**: Modular knowledge domains loaded on-demand
+- **11 Workflows**: Slash command procedures for automated tasks
+- **MCP Integration**: Model Context Protocol for external AI services
+
+### Skill Loading Protocol
+Agents dynamically load skills based on task context:
+1. User request triggers skill description matching
+2. Relevant SKILL.md files are loaded
+3. Reference materials and scripts are processed
+4. Results are synthesized into actionable responses
+
+### Master Validation Scripts
+- **checklist.py**: Core development validation (security, code quality, schema)
+- **verify_all.py**: Comprehensive pre-deployment verification (Lighthouse, E2E, bundle analysis)
+
+**Section sources**
+- [.agent/ARCHITECTURE.md:31-57](file://.agent/ARCHITECTURE.md#L31-L57)
+- [.agent/ARCHITECTURE.md:60-168](file://.agent/ARCHITECTURE.md#L60-L168)
+- [.agent/ARCHITECTURE.md:171-188](file://.agent/ARCHITECTURE.md#L171-L188)
+- [.agent/ARCHITECTURE.md:220-262](file://.agent/ARCHITECTURE.md#L220-L262)
+
+## Mobile App Development Environment
+The mobile application provides comprehensive elderly care management:
+
+### Technology Stack
+- **React Native + Expo SDK 54**: Cross-platform development
+- **TypeScript**: Type safety across the application
+- **Expo Router**: Modern navigation system
+- **React Native Paper**: Material Design components
+- **Speech APIs**: Voice-enabled interactions
+
+### Role-Based Dashboards
+- **Elderly Mode**: Voice-first interface with medication reminders and contact management
+- **Caregiver Mode**: Elderly management with CRUD operations
+- **Provider/Admin Modes**: Marketplaces and administrative functions
+
+### API Integration
+- **21+ Endpoints**: Complete integration with backend services
+- **JWT Authentication**: Secure token-based access
+- **Real-time Sync**: Live data updates from backend
+
+**Section sources**
+- [mobile-app/README.md:25-54](file://mobile-app/README.md#L25-L54)
+- [mobile-app/README_FRONTEND.md:71-120](file://mobile-app/README_FRONTEND.md#L71-L120)
+- [mobile-app/API_CONTRACTS.md:1-520](file://mobile-app/API_CONTRACTS.md#L1-L520)
+
+## Web Documentation Site
+The documentation system provides comprehensive API and integration guidance:
+
+### Documentation Architecture
+- **Unified API Documentation**: Centralized endpoint specifications
+- **Integration Guides**: Mobile app and frontend integration
+- **Type Definitions**: Complete TypeScript interface documentation
+- **Contract Specifications**: Detailed response shape definitions
+
+### Key Documentation Areas
+- **API Documentation**: Complete endpoint coverage with examples
+- **Integration Guide**: Mobile app setup and testing procedures
+- **Type Definitions**: Frontend type safety documentation
+- **Contract Specifications**: Response format validation
+
+**Section sources**
+- [API_DOCUMENTATION.md:1-363](file://API_DOCUMENTATION.md#L1-L363)
+- [mobile-app/INTEGRATION_GUIDE.md:1-262](file://mobile-app/INTEGRATION_GUIDE.md#L1-L262)
+- [mobile-app/TYPE_DEFINITIONS.md:1-369](file://mobile-app/TYPE_DEFINITIONS.md#L1-L369)
+
+## Comprehensive API Architecture
+The backend now implements a 15-module architecture supporting comprehensive elderly care:
+
+### Core Modules
+- **Auth Module**: User authentication and authorization
+- **Elderly Module**: Profile management and care coordination
+- **Caregiver Module**: Elderly linkage and management
+- **Medications Module**: Prescription tracking and adherence
+- **Contacts Module**: Emergency contact management
+- **Agenda Module**: Appointment and event scheduling
+- **Weather Module**: Climate-aware recommendations
+- **Notifications Module**: Push notification management
+- **Interactions Module**: User interaction logging
+- **Categories Module**: Service classification
+- **Offerings Module**: Marketplace service listings
+- **Service Requests Module**: Care service requests
+- **Health Module**: System health monitoring
+- **Prisma Module**: Database abstraction layer
+
+### Advanced Features
+- **Role-based Access Control**: Fine-grained permission systems
+- **Real-time Capabilities**: WebSocket and notification support
+- **Marketplace Integration**: Provider-customer relationship management
+- **Voice-enabled Interfaces**: Speech recognition and synthesis
+
+**Section sources**
+- [src/app.module.ts:21-46](file://src/app.module.ts#L21-L46)
+- [API_DOCUMENTATION.md:41-336](file://API_DOCUMENTATION.md#L41-L336)
+
 ## Dependency Analysis
-- Runtime dependencies include Nest core modules, Swagger, Prisma client, JWT, Passport, validation libraries, and date utilities.
-- Development dependencies include Nest CLI, Jest, ESLint/Prettier, Prisma, TypeScript, and related tooling.
-- Scripts cover build, dev/watch, debug, lint, test, and E2E testing.
+The project maintains comprehensive dependency management across all three environments:
+
+### Backend Dependencies
+- **NestJS Core**: Framework foundation with 11.x versions
+- **Prisma**: Database ORM with 6.19.2
+- **Swagger**: API documentation with 11.2.6
+- **Security**: Helmet for security headers
+- **Validation**: Class-validator for DTO validation
+
+### AI Agent Dependencies
+- **MCP Servers**: Model Context Protocol integration
+- **Python Scripts**: Validation and verification automation
+- **Skill Libraries**: Domain-specific knowledge modules
+
+### Mobile App Dependencies
+- **Expo SDK 54**: Cross-platform development
+- **React Native Paper**: UI component library
+- **Speech APIs**: Voice interaction capabilities
+- **Axios**: HTTP client for API communication
 
 ```mermaid
 graph LR
@@ -236,11 +423,16 @@ Pkg --> Lint["lint"]
 Pkg --> Test["test"]
 Pkg --> E2E["test:e2e"]
 Pkg --> Seed["db:seed (via prisma)"]
+Agent["AI Agent Scripts"] --> CheckList["checklist.py"]
+Agent --> VerifyAll["verify_all.py"]
+Mobile["Mobile App"] --> Expo["Expo SDK 54"]
+Mobile --> RNPaper["React Native Paper"]
 ```
 
 **Diagram sources**
 - [package.json:8-21](file://package.json#L8-L21)
-- [package.json:68-70](file://package.json#L68-L70)
+- [.agent/ARCHITECTURE.md:233-239](file://.agent/ARCHITECTURE.md#L233-L239)
+- [mobile-app/README.md:27-35](file://mobile-app/README.md#L27-L35)
 
 **Section sources**
 - [package.json:22-67](file://package.json#L22-L67)
@@ -248,141 +440,178 @@ Pkg --> Seed["db:seed (via prisma)"]
 - [package.json:68-70](file://package.json#L68-L70)
 
 ## Performance Considerations
-- Keep DTO validation strict to reduce downstream errors.
-- Use pagination for list endpoints where appropriate.
-- Leverage Prisma’s indexing (as defined in schema) for frequent queries.
-- Monitor database connection pooling and adjust Prisma client settings if scaling.
+Enhanced performance strategies for the comprehensive system:
+
+### Backend Optimization
+- **DTO Validation**: Strict input validation reduces downstream errors
+- **Pagination**: List endpoints implement pagination for scalability
+- **Database Indexing**: Prisma schema defines optimal indexes
+- **Connection Pooling**: Configurable Prisma client settings
+
+### AI Agent Performance
+- **Skill Loading**: On-demand skill loading minimizes memory footprint
+- **Workflow Optimization**: Parallel processing for multi-agent workflows
+- **Cache Strategies**: Intelligent caching for frequently accessed data
+
+### Mobile App Optimization
+- **Offline Support**: Local caching for reduced API dependency
+- **Lazy Loading**: Dynamic component loading for improved performance
+- **Voice Processing**: Efficient speech recognition and synthesis
 
 ## Troubleshooting Guide
-Common setup issues and resolutions:
-- Missing DATABASE_URL:
-  - Ensure DATABASE_URL is set in your environment. The schema expects a PostgreSQL URL.
-  - Reference: [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11)
-- Prisma client generation errors:
-  - Run Prisma client generation and migrations before starting the app.
-  - Reference: [prisma.config.ts:7-16](file://prisma.config.ts#L7-L16)
-- Seed fails:
-  - Confirm database connectivity and that migrations have been applied.
-  - Reference: [prisma/seed.ts:16-365](file://prisma/seed.ts#L16-L365)
-- Swagger not found:
-  - Swagger is mounted at docs; ensure the server is running and global prefix is applied.
-  - Reference: [src/main.ts:27-35](file://src/main.ts#L27-L35)
-- CORS blocked requests:
-  - CORS is enabled with origin true; verify client origin matches.
-  - Reference: [src/main.ts:12-16](file://src/main.ts#L12-L16)
-- JWT secret not found:
-  - JWT secret must be provided via configuration; otherwise, AuthModule registration will fail.
-  - Reference: [src/auth/auth.module.ts:14-21](file://src/auth/auth.module.ts#L14-L21)
+Comprehensive troubleshooting for all three system components:
 
-Verification steps:
-- Start the app in watch mode and confirm logs show Swagger path and port.
-  - Reference: [README.md:34-45](file://README.md#L34-L45)
-- Run E2E tests to validate basic routing.
-  - Reference: [test/app.e2e-spec.ts:19-24](file://test/app.e2e-spec.ts#L19-L24)
+### Backend API Issues
+- **Missing DATABASE_URL**: Ensure PostgreSQL connection string is configured
+- **Prisma Client Generation**: Run client generation and migrations before startup
+- **Seed Failures**: Verify database connectivity and migration status
+- **Swagger Access**: Confirm global prefix and route configuration
+
+### AI Agent System Issues
+- **MCP Server Configuration**: Verify MCP server setup in mcp_config.json
+- **Skill Loading**: Check skill file structure and references
+- **Validation Scripts**: Ensure Python dependencies are installed
+- **Agent Communication**: Verify MCP server connectivity
+
+### Mobile App Issues
+- **API Connectivity**: Test backend health endpoint connectivity
+- **Token Management**: Verify JWT token storage and injection
+- **Voice Features**: Check microphone permissions and speech API availability
+- **Platform-specific Issues**: Address iOS/Android differences
+
+### Cross-System Issues
+- **CORS Configuration**: Ensure proper origin allowance for all clients
+- **Authentication Flow**: Verify JWT token lifecycle management
+- **Data Synchronization**: Monitor real-time data consistency
+- **Error Handling**: Implement comprehensive error reporting
 
 **Section sources**
 - [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11)
-- [prisma.config.ts:7-16](file://prisma.config.ts#L7-L16)
-- [prisma/seed.ts:16-365](file://prisma/seed.ts#L16-L365)
-- [src/main.ts:12-41](file://src/main.ts#L12-L41)
-- [src/auth/auth.module.ts:14-21](file://src/auth/auth.module.ts#L14-L21)
-- [README.md:34-45](file://README.md#L34-L45)
-- [test/app.e2e-spec.ts:19-24](file://test/app.e2e-spec.ts#L19-L24)
+- [.agent/mcp_config.json:1-25](file://.agent/mcp_config.json#L1-L25)
+- [mobile-app/INTEGRATION_GUIDE.md:223-262](file://mobile-app/INTEGRATION_GUIDE.md#L223-L262)
 
 ## Conclusion
-You now have the essentials to install, configure, and run the 99-Pai API locally. Use the provided scripts, environment variables, and seed data to explore endpoints via Swagger. Expand from there by adding new modules and integrating additional services.
+The 99-Pai system now provides a comprehensive elderly care solution with three integrated development environments. The backend API supports 15 modules with advanced AI capabilities, the mobile app delivers voice-enabled care management, and the AI agent system provides autonomous problem-solving. Use the provided scripts, environment variables, and comprehensive documentation to explore all system capabilities effectively.
 
 ## Appendices
 
 ### Prerequisites
-- Node.js and npm: Install a recent LTS version compatible with the project’s dependencies.
-- PostgreSQL: Ensure a PostgreSQL server is available and reachable.
-- Prisma CLI: Installed globally or via dev dependencies to manage migrations and client generation.
+- **Node.js and npm**: Recent LTS version for all environments
+- **PostgreSQL**: Database server for backend API
+- **Prisma CLI**: Database migration and client generation
+- **Expo CLI**: Mobile app development and testing
+- **Python**: For AI agent validation scripts
+- **MCP Servers**: For AI agent external integrations
 
 **Section sources**
 - [package.json:58-58](file://package.json#L58-L58)
 - [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11)
+- [.agent/ARCHITECTURE.md:233-239](file://.agent/ARCHITECTURE.md#L233-L239)
 
 ### Step-by-Step Installation
-1. Install dependencies:
-   - Run the standard install command.
-   - Reference: [README.md:30-32](file://README.md#L30-L32)
-2. Set environment variables:
-   - DATABASE_URL must point to your PostgreSQL instance.
-   - JWT_SECRET must be configured for AuthModule.
-   - Reference: [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11), [src/auth/auth.module.ts:14-21](file://src/auth/auth.module.ts#L14-L21)
-3. Generate Prisma client and apply migrations:
-   - Use Prisma CLI to generate client and migrate.
-   - Reference: [prisma.config.ts:7-16](file://prisma.config.ts#L7-L16)
-4. Seed the database:
-   - Execute the seed script to populate initial data.
-   - Reference: [prisma/seed.ts:16-365](file://prisma/seed.ts#L16-L365)
-5. Start the application:
-   - Development watch mode or production mode.
-   - Reference: [README.md:34-45](file://README.md#L34-L45)
+1. **Backend API Setup**:
+   - Install dependencies: `npm install`
+   - Configure environment variables
+   - Generate Prisma client and apply migrations
+   - Seed database with initial data
+
+2. **AI Agent System Setup**:
+   - Configure MCP servers in mcp_config.json
+   - Install Python dependencies for validation scripts
+   - Test agent system connectivity
+
+3. **Mobile App Setup**:
+   - Navigate to mobile-app directory
+   - Install dependencies: `yarn install`
+   - Configure API URL in .env.local
+   - Start development server
+
+4. **Documentation Site Setup**:
+   - Access API documentation at /docs
+   - Review integration guides for mobile app
+   - Test API contracts and type definitions
 
 **Section sources**
 - [README.md:28-45](file://README.md#L28-L45)
-- [prisma.config.ts:7-16](file://prisma.config.ts#L7-L16)
-- [prisma/seed.ts:16-365](file://prisma/seed.ts#L16-L365)
-- [src/auth/auth.module.ts:14-21](file://src/auth/auth.module.ts#L14-L21)
+- [.agent/ARCHITECTURE.md:233-239](file://.agent/ARCHITECTURE.md#L233-L239)
+- [mobile-app/README.md:37-54](file://mobile-app/README.md#L37-L54)
 
 ### Environment Configuration
-- Required variables:
-  - DATABASE_URL: PostgreSQL connection string.
-  - JWT_SECRET: Secret used to sign JWT tokens.
-- Optional variables:
-  - PORT: Override default application port.
-- References:
-  - [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11)
-  - [src/main.ts:37-40](file://src/main.ts#L37-L40)
-  - [src/auth/auth.module.ts:16-18](file://src/auth/auth.module.ts#L16-L18)
+- **Backend Variables**:
+  - DATABASE_URL: PostgreSQL connection string
+  - JWT_SECRET: JWT token signing secret
+  - CORS_ORIGINS: Allowed origins for mobile app
+  - NODE_ENV: Environment mode (development/production)
+
+- **AI Agent Variables**:
+  - MCP server configurations in mcp_config.json
+  - API keys for external AI services
+  - Skill loading preferences
+
+- **Mobile App Variables**:
+  - EXPO_PUBLIC_API_URL: Backend API endpoint
+  - EXPO_PUBLIC_EXAMPLE: Mobile app configuration
 
 **Section sources**
 - [prisma/schema.prisma:8-11](file://prisma/schema.prisma#L8-L11)
-- [src/main.ts:37-40](file://src/main.ts#L37-L40)
-- [src/auth/auth.module.ts:16-18](file://src/auth/auth.module.ts#L16-L18)
+- [.agent/mcp_config.json:1-25](file://.agent/mcp_config.json#L1-L25)
+- [mobile-app/README_FRONTEND.md:28-32](file://mobile-app/README_FRONTEND.md#L28-L32)
 
 ### Development Workflow
-- Build:
-  - Reference: [package.json:9-9](file://package.json#L9-L9)
-- Run in development (watch mode):
-  - Reference: [package.json:12-12](file://package.json#L12-L12)
-- Debug:
-  - Reference: [package.json:13-13](file://package.json#L13-L13)
-- Lint and format:
-  - Reference: [package.json:15-15](file://package.json#L15-L15)
-- Tests:
-  - Unit tests: [package.json:16-16](file://package.json#L16-L16)
-  - E2E tests: [package.json:20-20](file://package.json#L20-L20), [test/app.e2e-spec.ts:1-26](file://test/app.e2e-spec.ts#L1-L26)
+- **Backend Development**:
+  - Build: `npm run build`
+  - Development: `npm run start:dev`
+  - Debug: `npm run start:debug`
+  - Tests: `npm run test` and `npm run test:e2e`
+
+- **AI Agent Development**:
+  - Validation: `python .agent/scripts/checklist.py .`
+  - Verification: `python .agent/scripts/verify_all.py .`
+  - Skill Testing: Individual skill validation
+
+- **Mobile App Development**:
+  - Development: `yarn start`
+  - Web Preview: `yarn web`
+  - Platform Testing: `yarn android` / `yarn ios`
+  - Testing: `yarn test` and `yarn type-check`
 
 **Section sources**
 - [package.json:8-21](file://package.json#L8-L21)
-- [test/app.e2e-spec.ts:1-26](file://test/app.e2e-spec.ts#L1-L26)
+- [.agent/ARCHITECTURE.md:233-239](file://.agent/ARCHITECTURE.md#L233-L239)
+- [mobile-app/README.md:37-54](file://mobile-app/README.md#L37-L54)
 
-### Accessing Swagger Documentation
-- Swagger UI is mounted at docs and uses a global prefix of api.
-- Verify the Swagger URL after startup.
-- Reference: [src/main.ts:27-35](file://src/main.ts#L27-L35)
+### Accessing Documentation and APIs
+- **Backend API Documentation**: Swagger UI at `/docs`
+- **Mobile App Integration Guide**: Comprehensive setup documentation
+- **AI Agent System Documentation**: Architecture and usage guides
+- **API Contracts**: Detailed endpoint specifications
 
 **Section sources**
 - [src/main.ts:27-35](file://src/main.ts#L27-L35)
+- [API_DOCUMENTATION.md:10-11](file://API_DOCUMENTATION.md#L10-L11)
+- [mobile-app/README_FRONTEND.md:40-48](file://mobile-app/README_FRONTEND.md#L40-L48)
 
 ### Initial API Testing Examples
-- Use the seeded test accounts to authenticate and explore endpoints:
-  - elderly@test.com / 123456
-  - caregiver@test.com / 123456
-  - provider@test.com / 123456
-  - admin@test.com / 123456
-- Endpoints are prefixed with api; Swagger docs describe available routes and schemas.
-- References:
-  - [prisma/seed.ts:349-355](file://prisma/seed.ts#L349-L355)
-  - [src/main.ts:10-10](file://src/main.ts#L10-L10)
-  - [src/auth/dto/login.dto.ts:1-13](file://src/auth/dto/login.dto.ts#L1-L13)
-  - [src/auth/dto/signup.dto.ts:1-53](file://src/auth/dto/signup.dto.ts#L1-L53)
+Test all system capabilities with comprehensive examples:
+
+#### Backend API Testing
+- **Authentication**: Use seeded test accounts for all roles
+- **Endpoints**: Test all 15 modules with proper JWT headers
+- **Swagger**: Explore interactive documentation and examples
+
+#### Mobile App Testing
+- **Authentication Flow**: Test all four user roles
+- **Feature Integration**: Verify all 21+ API endpoints
+- **Voice Features**: Test speech recognition and synthesis
+- **Offline Mode**: Verify local caching functionality
+
+#### AI Agent Testing
+- **Agent Capabilities**: Test all 20 specialist agents
+- **Skill Loading**: Verify on-demand skill activation
+- **Workflow Execution**: Test slash command procedures
+- **MCP Integration**: Verify external AI service connectivity
 
 **Section sources**
 - [prisma/seed.ts:349-355](file://prisma/seed.ts#L349-L355)
-- [src/main.ts:10-10](file://src/main.ts#L10-L10)
-- [src/auth/dto/login.dto.ts:1-13](file://src/auth/dto/login.dto.ts#L1-L13)
-- [src/auth/dto/signup.dto.ts:1-53](file://src/auth/dto/signup.dto.ts#L1-L53)
+- [mobile-app/INTEGRATION_GUIDE.md:80-101](file://mobile-app/INTEGRATION_GUIDE.md#L80-L101)
+- [.agent/ARCHITECTURE.md:31-57](file://.agent/ARCHITECTURE.md#L31-L57)

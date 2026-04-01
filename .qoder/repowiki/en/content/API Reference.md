@@ -23,7 +23,28 @@
 - [log-interaction.dto.ts](file://src/interactions/dto/log-interaction.dto.ts)
 - [weather.controller.ts](file://src/weather/weather.controller.ts)
 - [categories.controller.ts](file://src/categories/categories.controller.ts)
+- [caregiver.controller.ts](file://src/caregiver/caregiver.controller.ts)
+- [link.dto.ts](file://src/caregiver/dto/link.dto.ts)
+- [offerings.controller.ts](file://src/offerings/offerings.controller.ts)
+- [create-offering.dto.ts](file://src/offerings/dto/create-offering.dto.ts)
+- [offering-response.dto.ts](file://src/offerings/dto/offering-response.dto.ts)
+- [offering-contact-response.dto.ts](file://src/offerings/dto/offering-contact-response.dto.ts)
+- [service-requests.controller.ts](file://src/service-requests/service-requests.controller.ts)
+- [create-service-request.dto.ts](file://src/service-requests/dto/create-service-request.dto.ts)
+- [health.controller.ts](file://src/health/health.controller.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for 15 modules as requested
+- Expanded authentication section with user management endpoints
+- Added Caregiver Management module with linking and elderly user management
+- Added Marketplace module with Offerings and Categories management
+- Added Service Requests module for marketplace interactions
+- Added Health Monitoring module with database health checks
+- Updated architecture overview to reflect complete 15-module structure
+- Enhanced pagination and filtering documentation across all modules
+- Added rate limiting and security considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,7 +59,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides a comprehensive API reference for the 99-Pai backend. It covers HTTP methods, URL patterns, request/response schemas, authentication, validation rules, error responses, and practical examples. The API is organized by functional areas: Authentication, Elderly Care, Marketplace, and Communication. The backend is built with NestJS, uses Swagger/OpenAPI for documentation, and enforces global validation and CORS.
+This document provides a comprehensive API reference for the 99-Pai backend, covering all 15 modules with HTTP methods, URL patterns, request/response schemas, authentication requirements, and validation rules. The API is organized by functional areas: Authentication, Elderly Care, Caregiver Management, Marketplace, Service Requests, and Health Monitoring. The backend is built with NestJS, uses Swagger/OpenAPI for documentation, and enforces global validation, CORS, rate limiting, and security middleware.
 
 Key runtime and configuration highlights:
 - Global base path: api
@@ -46,16 +67,18 @@ Key runtime and configuration highlights:
 - Versioning: 1.0
 - CORS enabled with credentials support
 - Global validation pipe enabled
+- Rate limiting: 60 requests per minute per IP
+- Security: Helmet protection, JWT authentication, role-based authorization
 
 **Section sources**
-- [main.ts:1-43](file://src/main.ts#L1-L43)
+- [main.ts:1-52](file://src/main.ts#L1-L52)
 
 ## Project Structure
-The application is modularized by feature. Each module exposes controllers that define endpoints grouped by domain. The main application wires all feature modules.
+The application is modularized by feature into 15 distinct modules. Each module exposes controllers that define endpoints grouped by domain. The main application wires all feature modules with global guards and interceptors.
 
 ```mermaid
 graph TB
-A["AppModule<br/>imports all feature modules"] --> B["AuthModule"]
+A["AppModule<br/>imports all 15 feature modules"] --> B["AuthModule"]
 A --> C["ElderlyModule"]
 A --> D["CaregiverModule"]
 A --> E["MedicationsModule"]
@@ -67,55 +90,69 @@ A --> J["WeatherModule"]
 A --> K["CategoriesModule"]
 A --> L["OfferingsModule"]
 A --> M["ServiceRequestsModule"]
+A --> N["HealthModule"]
+A --> O["PrismaModule"]
+A --> P["ThrottlerGuard"]
+A --> Q["RequestIdInterceptor"]
 ```
 
 **Diagram sources**
-- [app.module.ts:17-34](file://src/app.module.ts#L17-L34)
+- [app.module.ts:21-45](file://src/app.module.ts#L21-L45)
 
 **Section sources**
-- [app.module.ts:1-36](file://src/app.module.ts#L1-L36)
+- [app.module.ts:1-46](file://src/app.module.ts#L1-L46)
 
 ## Core Components
 - Global prefix: api
 - CORS: enabled with origin true and credentials true
 - Validation: global ValidationPipe with transform, whitelist, forbidNonWhitelisted
 - OpenAPI/Swagger: configured with bearer auth and version 1.0
+- Rate Limiting: ThrottlerGuard with 60 requests per 60 seconds
+- Security: Helmet protection, request ID tracking
+- Health Checks: Database connectivity verification
 
 **Section sources**
-- [main.ts:9-35](file://src/main.ts#L9-L35)
+- [main.ts:11-30](file://src/main.ts#L11-L30)
+- [app.module.ts:40-43](file://src/app.module.ts#L40-L43)
 
 ## Architecture Overview
 High-level flow:
-- Bootstrap initializes the app, sets global prefix, enables CORS, registers validation pipe, and builds Swagger.
-- Controllers expose endpoints under /api/<route>.
-- Services encapsulate business logic and interact with Prisma.
-- Guards enforce authentication and role-based access.
+- Bootstrap initializes the app with global prefix, CORS, validation, and security middleware
+- Swagger documentation is generated for development environments
+- Controllers expose endpoints under /api/<module>/<route>
+- Services encapsulate business logic and interact with Prisma
+- Guards enforce authentication, role-based access, and rate limiting
+- Interceptors add request ID tracking for debugging
 
 ```mermaid
 graph TB
 Client["Client"] --> GW["Nest Application"]
+GW --> SEC["Helmet Security"]
 GW --> CORS["CORS Enabled"]
 GW --> VAL["Validation Pipe"]
+GW --> THROTTLE["Rate Limiter (60/min)"]
 GW --> SWAG["Swagger Docs /docs"]
 GW --> CTRL["Controllers"]
+CTRL --> GUARDS["JWT + Roles Guards"]
 CTRL --> SVC["Services"]
 SVC --> PRISMA["Prisma Service"]
 ```
 
 **Diagram sources**
-- [main.ts:6-35](file://src/main.ts#L6-L35)
+- [main.ts:7-30](file://src/main.ts#L7-L30)
+- [app.module.ts:40-43](file://src/app.module.ts#L40-L43)
 
 ## Detailed Component Analysis
 
 ### Authentication
 Endpoints
-- POST /api/signup
+- POST /api/auth/signup
   - Description: Register a new user
   - Auth: None
   - Request body: [SignupDto:12-52](file://src/auth/dto/signup.dto.ts#L12-L52)
   - Responses:
     - 201 Created: User registered and JWT token issued
-    - 409 Conflict: Email or cellphone already registered
+    - 409 Conflict: Email already registered
 - POST /api/auth/login
   - Description: Login user
   - Auth: None
@@ -146,7 +183,7 @@ Request/response schemas
   - password: string, required
 
 Example requests
-- curl -X POST http://localhost:3000/api/signup -H "Content-Type: application/json" -d '{"email":"john@example.com","password":"password123","name":"John Doe","role":"elderly"}'
+- curl -X POST http://localhost:3000/api/auth/signup -H "Content-Type: application/json" -d '{"email":"john@example.com","password":"password123","name":"John Doe","role":"elderly"}'
 - curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"john@example.com","password":"password123"}'
 
 Example response
@@ -161,16 +198,12 @@ Example response
 }
 
 Common failures
-- 409 Conflict on duplicate email or cellphone during signup
+- 409 Conflict on duplicate email during signup
 - 401 Unauthorized on invalid login credentials
 
 **Section sources**
 - [auth.controller.ts:19-42](file://src/auth/auth.controller.ts#L19-L42)
 - [auth.service.ts:23-100](file://src/auth/auth.service.ts#L23-L100)
-- [auth.service.ts:102-135](file://src/auth/auth.service.ts#L102-L135)
-- [auth.service.ts:137-162](file://src/auth/auth.service.ts#L137-L162)
-- [signup.dto.ts:12-52](file://src/auth/dto/signup.dto.ts#L12-L52)
-- [login.dto.ts:4-12](file://src/auth/dto/login.dto.ts#L4-L12)
 
 ### Elderly Profile
 Endpoints
@@ -207,12 +240,50 @@ Common failures
 - [elderly.controller.ts:23-40](file://src/elderly/elderly.controller.ts#L23-L40)
 - [update-profile.dto.ts:12-43](file://src/elderly/dto/update-profile.dto.ts#L12-L43)
 
+### Caregiver Management
+Endpoints
+- POST /api/caregiver/link
+  - Description: Link caregiver to elderly user using link code
+  - Auth: Bearer JWT
+  - Roles: caregiver
+  - Guards: JwtAuthGuard, RolesGuard
+  - Request body: [LinkDto](file://src/caregiver/dto/link.dto.ts)
+  - Responses: 201 Created with success message
+- GET /api/caregiver/elderly
+  - Description: Get all elderly users linked to caregiver
+  - Auth: Bearer JWT
+  - Roles: caregiver
+  - Guards: JwtAuthGuard, RolesGuard
+  - Responses: 200 OK with list of elderly users
+- GET /api/caregiver/elderly/{elderlyProfileId}
+  - Description: Get detailed info about a linked elderly user
+  - Auth: Bearer JWT
+  - Roles: caregiver
+  - Guards: JwtAuthGuard, RolesGuard
+  - Path params: elderlyProfileId (string)
+  - Responses: 200 OK with elderly user details
+
+Request/response schemas
+- LinkDto
+  - linkCode: string, required, format: XXX-XXX-XXX
+
+Example request
+- curl -X POST http://localhost:3000/api/caregiver/link -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d '{"linkCode":"ABC-123-XYZ"}'
+
+Common failures
+- 401 Unauthorized for missing/invalid token
+- 403 Forbidden for non-caregiver users
+- 404 Not Found for invalid link codes or elderly profiles
+
+**Section sources**
+- [caregiver.controller.ts:23-51](file://src/caregiver/caregiver.controller.ts#L23-L51)
+
 ### Medications
 Endpoints
 - GET /api/elderly/{elderlyProfileId}/medications
   - Description: Get all medications for an elderly user
   - Auth: Bearer JWT
-  - Roles: caregiver, provider, admin (via RolesGuard)
+  - Roles: caregiver, provider, admin
   - Path params: elderlyProfileId (string)
   - Responses: 200 OK with list
 - POST /api/elderly/{elderlyProfileId}/medications
@@ -227,7 +298,7 @@ Endpoints
   - Auth: Bearer JWT
   - Roles: caregiver, provider, admin
   - Path params: elderlyProfileId (string), id (string)
-  - Request body: [UpdateMedicationDto:1-200](file://src/medications/dto/update-medication.dto.ts#L1-L200)
+  - Request body: [UpdateMedicationDto](file://src/medications/dto/update-medication.dto.ts)
   - Responses: 200 OK
 - DELETE /api/elderly/{elderlyProfileId}/medications/{id}
   - Description: Delete a medication
@@ -239,13 +310,13 @@ Endpoints
   - Description: Get today's medications for elderly user
   - Auth: Bearer JWT
   - Roles: elderly
-  - Responses: 200 OK with today’s meds
+  - Responses: 200 OK with today's meds
 - POST /api/medications/{id}/confirm
   - Description: Confirm or mark medication as missed
   - Auth: Bearer JWT
   - Roles: elderly
   - Path params: id (string)
-  - Request body: [ConfirmMedicationDto:1-200](file://src/medications/dto/confirm-medication.dto.ts#L1-L200)
+  - Request body: [ConfirmMedicationDto](file://src/medications/dto/confirm-medication.dto.ts)
   - Responses: 201 Created
 - GET /api/elderly/{elderlyProfileId}/medication-history
   - Description: Get medication history for an elderly user
@@ -296,7 +367,7 @@ Endpoints
   - Auth: Bearer JWT
   - Roles: caregiver, provider, admin
   - Path params: elderlyProfileId (string), id (string)
-  - Request body: [UpdateContactDto:1-200](file://src/contacts/dto/update-contact.dto.ts#L1-L200)
+  - Request body: [UpdateContactDto](file://src/contacts/dto/update-contact.dto.ts)
   - Responses: 200 OK
 - DELETE /api/elderly/{elderlyProfileId}/contacts/{id}
   - Description: Delete a contact
@@ -365,7 +436,7 @@ Endpoints
   - Auth: Bearer JWT
   - Roles: caregiver, provider, admin
   - Path params: elderlyProfileId (string), id (string)
-  - Request body: [UpdateAgendaDto:1-200](file://src/agenda/dto/update-agenda.dto.ts#L1-L200)
+  - Request body: [UpdateAgendaDto](file://src/agenda/dto/update-agenda.dto.ts)
   - Responses: 200 OK
 - DELETE /api/elderly/{elderlyProfileId}/agenda/{id}
   - Description: Delete an agenda event
@@ -377,7 +448,7 @@ Endpoints
   - Description: Get today's agenda for elderly user
   - Auth: Bearer JWT
   - Roles: elderly
-  - Responses: 200 OK with today’s events
+  - Responses: 200 OK with today's events
 
 Request/response schemas
 - CreateAgendaDto
@@ -482,7 +553,7 @@ Endpoints
   - Auth: Bearer JWT
   - Roles: admin
   - Guards: JwtAuthGuard, RolesGuard
-  - Request body: [CreateCategoryDto:1-200](file://src/categories/dto/create-category.dto.ts#L1-L200)
+  - Request body: [CreateCategoryDto](file://src/categories/dto/create-category.dto.ts)
   - Responses: 201 Created, 401 Unauthorized, 403 Forbidden, 404 Not Found
 - PATCH /api/categories/{id}
   - Description: Update a category (admin only)
@@ -490,7 +561,7 @@ Endpoints
   - Roles: admin
   - Guards: JwtAuthGuard, RolesGuard
   - Path params: id (UUID)
-  - Request body: [UpdateCategoryDto:1-200](file://src/categories/dto/update-category.dto.ts#L1-L200)
+  - Request body: [UpdateCategoryDto](file://src/categories/dto/create-category.dto.ts)
   - Responses: 200 OK, 401 Unauthorized, 403 Forbidden, 404 Not Found
 - DELETE /api/categories/{id}
   - Description: Delete a category (admin only)
@@ -511,16 +582,159 @@ Common failures
 **Section sources**
 - [categories.controller.ts:35-113](file://src/categories/categories.controller.ts#L35-L113)
 
+### Offerings
+Endpoints
+- POST /api/offerings
+  - Description: Create a new offering (provider or admin only)
+  - Auth: Bearer JWT
+  - Roles: provider, admin
+  - Guards: JwtAuthGuard, RolesGuard
+  - Request body: [CreateOfferingDto](file://src/offerings/dto/create-offering.dto.ts)
+  - Responses: 201 Created, 401 Unauthorized, 403 Forbidden, 404 Not Found
+- GET /api/offerings
+  - Description: List all active offerings (public)
+  - Auth: None
+  - Responses: 200 OK with list of offerings
+- GET /api/offerings/category/{categoryId}
+  - Description: List offerings by category (public)
+  - Auth: None
+  - Path params: categoryId (UUID)
+  - Responses: 200 OK with list of offerings
+- GET /api/offerings/subcategory/{subcategoryId}
+  - Description: List offerings by subcategory (public)
+  - Auth: None
+  - Path params: subcategoryId (UUID)
+  - Responses: 200 OK with list of offerings
+- GET /api/offerings/{id}
+  - Description: Get offering details (public)
+  - Auth: None
+  - Path params: id (UUID)
+  - Responses: 200 OK, 404 Not Found
+- PATCH /api/offerings/{id}
+  - Description: Update an offering (owner only)
+  - Auth: Bearer JWT
+  - Guards: JwtAuthGuard
+  - Path params: id (UUID)
+  - Request body: [UpdateOfferingDto](file://src/offerings/dto/update-offering.dto.ts)
+  - Responses: 200 OK, 401 Unauthorized, 403 Forbidden, 404 Not Found
+- DELETE /api/offerings/{id}
+  - Description: Deactivate an offering (owner only)
+  - Auth: Bearer JWT
+  - Guards: JwtAuthGuard
+  - Path params: id (UUID)
+  - Responses: 200 OK, 401 Unauthorized, 403 Forbidden, 404 Not Found
+- POST /api/offerings/{id}/contact-data
+  - Description: Request contact information for an offering
+  - Auth: Bearer JWT
+  - Guards: JwtAuthGuard
+  - Path params: id (UUID)
+  - Responses: 201 OK with contact info, 400 Bad Request (own offering), 401 Unauthorized, 404 Not Found
+
+Request/response schemas
+- CreateOfferingDto
+  - title: string, required
+  - description: string, required
+  - price: number, required, min 0
+  - categoryId: string, required (UUID)
+  - subcategoryId: string, required (UUID)
+  - isActive: boolean, optional, default true
+
+Response schemas
+- OfferingResponseDto
+  - id: string (UUID)
+  - title: string
+  - description: string
+  - price: number
+  - categoryId: string (UUID)
+  - subcategoryId: string (UUID)
+  - isActive: boolean
+  - createdAt: string (date-time)
+  - updatedAt: string (date-time)
+- OfferingContactResponseDto
+  - providerName: string
+  - providerPhone: string
+  - providerEmail: string
+
+Example request
+- curl -X POST http://localhost:3000/api/offerings -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d '{"title":"Diet consultation","description":"Professional nutrition guidance","price":150.00,"categoryId":"123e4567-e89b-12d3-a456-426614174000","subcategoryId":"123e4567-e89b-12d3-a456-426614174001"}'
+
+Common failures
+- 401 Unauthorized for missing/invalid token
+- 403 Forbidden for insufficient roles or ownership
+- 404 Not Found for invalid category/subcategory IDs
+
+**Section sources**
+- [offerings.controller.ts:35-171](file://src/offerings/offerings.controller.ts#L35-L171)
+
+### Service Requests
+Endpoints
+- POST /api/services/request
+  - Description: Create a service request
+  - Auth: Bearer JWT
+  - Roles: elderly
+  - Guards: JwtAuthGuard, RolesGuard
+  - Request body: [CreateServiceRequestDto](file://src/service-requests/dto/create-service-request.dto.ts)
+  - Responses: 201 Created, 400 Bad Request, 404 Not Found
+- GET /api/services/my-requests
+  - Description: List my service requests
+  - Auth: Bearer JWT
+  - Roles: elderly
+  - Guards: JwtAuthGuard, RolesGuard
+  - Responses: 200 OK with list of requests
+- PATCH /api/services/requests/{id}/cancel
+  - Description: Cancel a service request
+  - Auth: Bearer JWT
+  - Roles: elderly
+  - Guards: JwtAuthGuard, RolesGuard
+  - Path params: id (string)
+  - Responses: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found
+
+Request/response schemas
+- CreateServiceRequestDto
+  - offeringId: string, required (UUID)
+  - requestDate: string, required (date-time)
+  - status: enum ['pending','confirmed','completed','cancelled'], optional, default 'pending'
+
+Example request
+- curl -X POST http://localhost:3000/api/services/request -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d '{"offeringId":"123e4567-e89b-12d3-a456-426614174002","requestDate":"2026-03-25T14:30:00Z"}'
+
+Common failures
+- 400 Bad Request for invalid offering status or dates
+- 403 Forbidden for attempting to cancel other users' requests
+- 404 Not Found for invalid offering or request IDs
+
+**Section sources**
+- [service-requests.controller.ts:51-93](file://src/service-requests/service-requests.controller.ts#L51-L93)
+
+### Health Monitoring
+Endpoints
+- GET /api/health
+  - Description: Health check for database connectivity
+  - Auth: None
+  - Responses: 200 OK with health status
+  - Note: Health check is performed automatically by Terminus
+
+Example request
+- curl http://localhost:3000/api/health
+
+Common failures
+- 503 Service Unavailable when database is unreachable
+
+**Section sources**
+- [health.controller.ts:12-18](file://src/health/health.controller.ts#L12-L18)
+
 ## Dependency Analysis
 - Controllers depend on Services for business logic.
 - Services depend on PrismaService for database operations.
-- Guards (JwtAuthGuard, RolesGuard) protect routes.
+- Guards (JwtAuthGuard, RolesGuard, ThrottlerGuard) protect routes.
 - DTOs define request schemas validated by the global ValidationPipe.
+- Interceptors add request ID tracking for debugging.
 
 ```mermaid
 graph LR
 AC["AuthController"] --> AS["AuthService"]
 EC["ElderlyController"] --> ES["ElderlyService"]
+CGC["CaregiverController"] --> CGS["CaregiverService"]
 MC["MedicationsController"] --> MS["MedicationsService"]
 CC["ContactsController"] --> CS["ContactsService"]
 AgC["AgendaController"] --> AgS["AgendaService"]
@@ -528,8 +742,11 @@ NC["NotificationsController"] --> NS["NotificationsService"]
 IC["InteractionsController"] --> IS["InteractionsService"]
 WC["WeatherController"] --> WS["WeatherService"]
 CatC["CategoriesController"] --> CatS["CategoriesService"]
+OC["OfferingsController"] --> OS["OfferingsService"]
+SRC["ServiceRequestsController"] --> SRS["ServiceRequestsService"]
+HC["HealthController"] --> HS["HealthService"]
 AS --> PS["PrismaService"]
-ES --> PS
+CGS --> PS
 MS --> PS
 CS --> PS
 AgS --> PS
@@ -537,11 +754,14 @@ NS --> PS
 IS --> PS
 WS --> PS
 CatS --> PS
+OS --> PS
+SRS --> PS
+HS --> PS
 ```
 
 **Diagram sources**
 - [auth.controller.ts:16-43](file://src/auth/auth.controller.ts#L16-L43)
-- [elderly.controller.ts:20-41](file://src/elderly/elderly.controller.ts#L20-L41)
+- [caregiver.controller.ts:20-52](file://src/caregiver/caregiver.controller.ts#L20-L52)
 - [medications.controller.ts:33-144](file://src/medications/medications.controller.ts#L33-L144)
 - [contacts.controller.ts:32-128](file://src/contacts/contacts.controller.ts#L32-L128)
 - [agenda.controller.ts:32-104](file://src/agenda/agenda.controller.ts#L32-L104)
@@ -549,10 +769,13 @@ CatS --> PS
 - [interactions.controller.ts:20-30](file://src/interactions/interactions.controller.ts#L20-L30)
 - [weather.controller.ts:17-27](file://src/weather/weather.controller.ts#L17-L27)
 - [categories.controller.ts:32-114](file://src/categories/categories.controller.ts#L32-L114)
+- [offerings.controller.ts:32-172](file://src/offerings/offerings.controller.ts#L32-L172)
+- [service-requests.controller.ts:30-94](file://src/service-requests/service-requests.controller.ts#L30-L94)
+- [health.controller.ts:5-19](file://src/health/health.controller.ts#L5-L19)
 
 **Section sources**
 - [auth.controller.ts:1-43](file://src/auth/auth.controller.ts#L1-L43)
-- [elderly.controller.ts:1-42](file://src/elderly/elderly.controller.ts#L1-L42)
+- [caregiver.controller.ts:1-53](file://src/caregiver/caregiver.controller.ts#L1-L53)
 - [medications.controller.ts:1-145](file://src/medications/medications.controller.ts#L1-L145)
 - [contacts.controller.ts:1-129](file://src/contacts/contacts.controller.ts#L1-L129)
 - [agenda.controller.ts:1-105](file://src/agenda/agenda.controller.ts#L1-L105)
@@ -560,33 +783,49 @@ CatS --> PS
 - [interactions.controller.ts:1-31](file://src/interactions/interactions.controller.ts#L1-L31)
 - [weather.controller.ts:1-28](file://src/weather/weather.controller.ts#L1-L28)
 - [categories.controller.ts:1-115](file://src/categories/categories.controller.ts#L1-L115)
+- [offerings.controller.ts:1-173](file://src/offerings/offerings.controller.ts#L1-L173)
+- [service-requests.controller.ts:1-95](file://src/service-requests/service-requests.controller.ts#L1-L95)
+- [health.controller.ts:1-20](file://src/health/health.controller.ts#L1-L20)
 
 ## Performance Considerations
-- Pagination defaults: page=1, limit=50 for endpoints supporting pagination (medication-history, call-history).
-- ValidationPipe transforms and enforces whitelisting, reducing downstream parsing overhead.
-- Use query filters (from/to) for time-bound queries to limit payload sizes.
-- Prefer bulk operations where feasible; current controllers expose per-item endpoints.
+- Pagination defaults: page=1, limit=50 for endpoints supporting pagination (medication-history, call-history, offerings, categories)
+- ValidationPipe transforms and enforces whitelisting, reducing downstream parsing overhead
+- Rate limiting: 60 requests per minute per IP address using ThrottlerGuard
+- Use query filters (from/to) for time-bound queries to limit payload sizes
+- Prefer bulk operations where feasible; current controllers expose per-item endpoints
+- Helmet security middleware provides XSS protection and other security headers
 
-[No sources needed since this section provides general guidance]
+**Section sources**
+- [main.ts:21-28](file://src/main.ts#L21-L28)
+- [app.module.ts:24](file://src/app.module.ts#L24)
+- [medications.controller.ts:120-143](file://src/medications/medications.controller.ts#L120-L143)
+- [contacts.controller.ts:110-127](file://src/contacts/contacts.controller.ts#L110-L127)
+- [agenda.controller.ts:37-52](file://src/agenda/agenda.controller.ts#L37-L52)
 
 ## Troubleshooting Guide
 Common HTTP statuses and causes
 - 400 Bad Request
-  - Validation errors from DTOs (e.g., invalid time/date, out-of-range values)
+  - Validation errors from DTOs (e.g., invalid time/date, out-of-range values, invalid UUID formats)
+  - Business logic violations (e.g., trying to cancel non-pending requests, requesting own contact info)
 - 401 Unauthorized
   - Missing or invalid Bearer token; user not found in protected routes
 - 403 Forbidden
   - Insufficient role (e.g., non-elderly attempting elderly-only endpoints)
+  - Attempting to access resources owned by other users
 - 404 Not Found
-  - Resource not found (e.g., category ID not present)
+  - Resource not found (e.g., category ID, offering ID, elderly profile ID)
 - 409 Conflict
-  - Duplicate registration (email or cellphone) during signup
+  - Duplicate registration (email) during signup
+- 429 Too Many Requests
+  - Rate limit exceeded (60 requests per minute)
 
 Validation rules summary
 - Strings: min length for passwords, required fields enforced
-- Numbers: min/max constraints for autonomyScore
-- Enums: constrained to allowed values (role, platform, interaction type)
+- Numbers: min/max constraints for autonomyScore, price, thresholdDays
+- Enums: constrained to allowed values (role, platform, interaction type, status)
 - Dates: ISO date-time strings for dateTime fields
+- UUIDs: proper UUID format required for ID parameters
+- Phone numbers: validated format for contact creation
 
 **Section sources**
 - [auth.service.ts:35-51](file://src/auth/auth.service.ts#L35-L51)
@@ -594,9 +833,10 @@ Validation rules summary
 - [auth.service.ts:149-151](file://src/auth/auth.service.ts#L149-L151)
 - [medications.controller.ts:120-143](file://src/medications/medications.controller.ts#L120-L143)
 - [contacts.controller.ts:110-127](file://src/contacts/contacts.controller.ts#L110-L127)
+- [service-requests.controller.ts:77-93](file://src/service-requests/service-requests.controller.ts#L77-L93)
 
 ## Conclusion
-This API provides a cohesive set of endpoints for user authentication, elderly care management (medications, contacts, agenda), communication/logging, notifications, weather assistance, and marketplace categorization. All endpoints are documented via Swagger at /docs, with global validation and CORS enabled. Use the provided curl examples and Postman collection to test endpoints efficiently.
+This API provides a comprehensive set of 15 modules for user authentication, elderly care management (medications, contacts, agenda), caregiver management, communication/logging, notifications, weather assistance, marketplace categorization and offerings, service requests, and health monitoring. All endpoints are documented via Swagger at /docs, with global validation, CORS, rate limiting, and security middleware enabled. Use the provided curl examples and Postman collection to test endpoints efficiently.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -605,36 +845,51 @@ This API provides a cohesive set of endpoints for user authentication, elderly c
 ### API Base URL and Versioning
 - Base URL: http://localhost:3000/api
 - Version: 1.0 (Swagger version field)
+- Environment variables: PORT (default 3000), NODE_ENV (development/production), CORS_ORIGINS (comma-separated)
 
 **Section sources**
-- [main.ts:10-35](file://src/main.ts#L10-L35)
+- [main.ts:44-49](file://src/main.ts#L44-L49)
+- [main.ts:15](file://src/main.ts#L15)
 
 ### Authentication and Authorization
 - JWT Bearer tokens are required for most endpoints.
 - Roles:
-  - elderly: can access elderly-specific endpoints (e.g., /api/medications/today, /api/interactions/log)
-  - caregiver/provider/admin: can manage others’ data (e.g., create/update/delete for medications, contacts, agenda)
+  - elderly: can access elderly-specific endpoints (e.g., /api/medications/today, /api/interactions/log, /api/services/my-requests)
+  - caregiver: can manage elderly users' data and link elderly profiles
+  - provider: can create and manage marketplace offerings
+  - admin: can manage categories and has full access to administrative functions
 - Guard usage:
   - JwtAuthGuard: protects routes requiring a valid token
   - RolesGuard: restricts routes by role
+  - ThrottlerGuard: limits request rate to 60 per minute
 
 **Section sources**
 - [jwt-auth.guard.ts:1-6](file://src/auth/jwt-auth.guard.ts#L1-L6)
 - [elderly.controller.ts:24-32](file://src/elderly/elderly.controller.ts#L24-L32)
 - [medications.controller.ts:96-118](file://src/medications/medications.controller.ts#L96-L118)
 - [interactions.controller.ts:23-29](file://src/interactions/interactions.controller.ts#L23-L29)
+- [caregiver.controller.ts:23-37](file://src/caregiver/caregiver.controller.ts#L23-L37)
+- [offerings.controller.ts:36-49](file://src/offerings/offerings.controller.ts#L36-L49)
+- [app.module.ts:40-42](file://src/app.module.ts#L40-L42)
 
 ### CORS and Content-Type
 - CORS: enabled with origin true and credentials true
 - Content-Type: application/json is recommended for JSON payloads
+- Allowed origins: configurable via CORS_ORIGINS environment variable
 
 **Section sources**
-- [main.ts:12-16](file://src/main.ts#L12-L16)
+- [main.ts:14-19](file://src/main.ts#L14-L19)
 
-### Rate Limiting
-- No explicit rate limiting middleware is configured in the bootstrap code.
+### Rate Limiting and Security
+- Rate limiting: 60 requests per minute per IP address using ThrottlerGuard
+- Security middleware: Helmet provides XSS protection, CSRF protection, and other security headers
+- Request ID tracking: RequestIdInterceptor adds unique identifiers to each request for debugging
+- Health monitoring: Automatic database connectivity checks via Terminus
 
-[No sources needed since this section provides general guidance]
+**Section sources**
+- [app.module.ts:24](file://src/app.module.ts#L24)
+- [main.ts:30](file://src/main.ts#L30)
+- [app.module.ts:18](file://src/app.module.ts#L18)
 
 ### Pagination and Filtering
 - Pagination pattern:
@@ -643,14 +898,17 @@ This API provides a cohesive set of endpoints for user authentication, elderly c
 - Filtering pattern:
   - from/to: date-time strings for time-range queries (medications, agenda)
   - thresholdDays: integer >= 1 for contacts
+  - categoryId/subcategoryId: UUID format for marketplace filtering
 
 **Section sources**
 - [medications.controller.ts:120-143](file://src/medications/medications.controller.ts#L120-L143)
 - [contacts.controller.ts:110-127](file://src/contacts/contacts.controller.ts#L110-L127)
 - [agenda.controller.ts:37-52](file://src/agenda/agenda.controller.ts#L37-L52)
+- [offerings.controller.ts:73-97](file://src/offerings/offerings.controller.ts#L73-L97)
 
 ### Example Requests and Postman Collection
 - Swagger UI: http://localhost:3000/docs
 - Example curl commands are included in each endpoint section above.
+- Postman collection: Available upon request for comprehensive endpoint testing.
 
 [No sources needed since this section provides general guidance]

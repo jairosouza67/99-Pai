@@ -106,7 +106,7 @@ describe('Elderly & Caregiver Features (E2E)', () => {
   // 2. CAREGIVER - LINKED ELDERLY
   // ==========================================================================
   describe('Caregiver - Linked Elderly', () => {
-    it("GET /api/caregiver/elderly → 200, returns array with at least 1 elderly", async () => {
+    it('GET /api/caregiver/elderly → 200, returns array with at least 1 elderly', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/caregiver/elderly')
         .set('Authorization', `Bearer ${caregiverToken}`)

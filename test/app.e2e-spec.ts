@@ -21,8 +21,6 @@ describe('AppController (e2e)', () => {
   });
 
   it('/categories (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/categories')
-      .expect(200);
+    return request(app.getHttpServer()).get('/categories').expect(200);
   });
 });

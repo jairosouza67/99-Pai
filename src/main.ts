@@ -12,7 +12,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // CORS — allowlist via env
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
+    'http://localhost:3000',
+  ];
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -33,7 +35,9 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('99-Pai API')
-      .setDescription('Unified API for elderly assistant and service marketplace')
+      .setDescription(
+        'Unified API for elderly assistant and service marketplace',
+      )
       .setVersion('1.0')
       .addBearerAuth()
       .build();
