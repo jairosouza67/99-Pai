@@ -16,6 +16,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { OfferingsModule } from './offerings/offerings.module';
 import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { RequestIdInterceptor } from './common/interceptors/request-id.interceptor';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RequestIdInterceptor } from './common/interceptors/request-id.intercept
     CategoriesModule,
     OfferingsModule,
     ServiceRequestsModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
