@@ -12,12 +12,12 @@
 |------|------|------|--------|-------|
 | T0 | Git Init + Segurança de Credenciais | Fase 0 | `🔄 EM PROGRESSO` | 2026-03-31: git init + commit inicial + .env.example seguro + JWT_SECRET rotacionado localmente; pendente reset manual da senha Supabase |
 | T1 | SSL + Conexões Prisma/Supabase | Fase 1 | `❌ BLOQUEADO` | 2026-03-31: project_ref e region corrigidos (us-east-2); bloqueado por credencial final de DB (Tenant or user not found) |
-| T2 | Baseline Migration | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: baseline SQL gerado em prisma/migrations/0_init/migration.sql; pendente resolve/status apos destravar T1 |
+| T2 | Baseline Migration | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: baseline SQL gerado e commitado; pendente migrate resolve apos T1 |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: CORS por allowlist via env, Swagger dev-only e Logger NestJS; build OK |
 | T4 | Rate Limiting + Helmet | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: @nestjs/throttler + helmet configurados globalmente; build OK |
-| T5 | PrismaService Hardening | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: logger/event listeners implementados e build OK; validacao de conexao pendente por T1 (REGION/PASSWORD) |
-| T6 | Health Check Endpoint | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: HealthModule + /api/health + Prisma indicator implementados; build OK, teste runtime pendente por T1 |
-| T7 | Observabilidade + Security Fixes | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: linkCode com crypto, interceptor global de request-id e checks estaticos OK; validacao runtime pendente por T1 |
+| T5 | PrismaService Hardening | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: Logger + event listeners implementados; build OK; validacao runtime pendente por T1 |
+| T6 | Health Check Endpoint | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: HealthModule + /api/health + Prisma indicator implementados; build OK; validacao runtime pendente por T1 |
+| T7 | Observabilidade + Security Fixes | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: linkCode com crypto, interceptor global de request-id, zero console.log/Math.random; build OK; validacao runtime pendente por T1 |
 | T8 | Testes de Regressão E2E | Fase 1 | `⬜ PENDENTE` | |
 | T9 | Validação Final + Smoke Test | Fase 1 | `⬜ PENDENTE` | |
 
