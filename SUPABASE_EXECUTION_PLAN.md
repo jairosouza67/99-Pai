@@ -15,7 +15,7 @@
 | T2 | Baseline Migration | Fase 1 | `⬜ PENDENTE` | |
 | T3 | Hardening main.ts (CORS, Swagger, Logger) | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: CORS por allowlist via env, Swagger dev-only e Logger NestJS; build OK |
 | T4 | Rate Limiting + Helmet | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: @nestjs/throttler + helmet configurados globalmente; build OK |
-| T5 | PrismaService Hardening | Fase 1 | `⬜ PENDENTE` | |
+| T5 | PrismaService Hardening | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: logger/event listeners implementados e build OK; validacao de conexao pendente por T1 (REGION/PASSWORD) |
 | T6 | Health Check Endpoint | Fase 1 | `⬜ PENDENTE` | |
 | T7 | Observabilidade + Security Fixes | Fase 1 | `⬜ PENDENTE` | |
 | T8 | Testes de Regressão E2E | Fase 1 | `⬜ PENDENTE` | |
@@ -371,7 +371,7 @@ git commit -m "security: add rate limiting (throttler) and helmet headers"
 ## ⚡ TASK T5: PrismaService Hardening
 
 **Fase**: 1
-**Status**: `⬜ PENDENTE`
+**Status**: `🔄 EM PROGRESSO`
 **Depende de**: T1
 **Objetivo**: Adicionar logging estruturado e tratamento de erros no PrismaService.
 
