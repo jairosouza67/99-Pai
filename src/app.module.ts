@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,6 +15,7 @@ import { WeatherModule } from './weather/weather.module';
 import { CategoriesModule } from './categories/categories.module';
 import { OfferingsModule } from './offerings/offerings.module';
 import { ServiceRequestsModule } from './service-requests/service-requests.module';
+import { RequestIdInterceptor } from './common/interceptors/request-id.interceptor';
 
 @Module({
   imports: [
@@ -34,6 +35,9 @@ import { ServiceRequestsModule } from './service-requests/service-requests.modul
     OfferingsModule,
     ServiceRequestsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: RequestIdInterceptor },
+  ],
 })
 export class AppModule {}

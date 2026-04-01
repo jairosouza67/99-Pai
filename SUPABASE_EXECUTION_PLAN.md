@@ -17,7 +17,7 @@
 | T4 | Rate Limiting + Helmet | Fase 1 | `✅ CONCLUÍDO` | 2026-03-31: @nestjs/throttler + helmet configurados globalmente; build OK |
 | T5 | PrismaService Hardening | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: logger/event listeners implementados e build OK; validacao de conexao pendente por T1 (REGION/PASSWORD) |
 | T6 | Health Check Endpoint | Fase 1 | `⬜ PENDENTE` | |
-| T7 | Observabilidade + Security Fixes | Fase 1 | `⬜ PENDENTE` | |
+| T7 | Observabilidade + Security Fixes | Fase 1 | `🔄 EM PROGRESSO` | 2026-03-31: linkCode com crypto, interceptor global de request-id e checks estaticos OK; validacao runtime pendente por T1 |
 | T8 | Testes de Regressão E2E | Fase 1 | `⬜ PENDENTE` | |
 | T9 | Validação Final + Smoke Test | Fase 1 | `⬜ PENDENTE` | |
 
@@ -485,7 +485,7 @@ git commit -m "feat: add health check endpoint with database ping"
 ## ⚡ TASK T7: Observabilidade + Security Fixes
 
 **Fase**: 1
-**Status**: `⬜ PENDENTE`
+**Status**: `🔄 EM PROGRESSO`
 **Depende de**: T5
 **Objetivo**: Corrigir security issues restantes + observabilidade.
 
