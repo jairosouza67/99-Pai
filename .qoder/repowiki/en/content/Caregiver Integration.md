@@ -34,16 +34,17 @@
 - [medications.controller.ts](file://src/medications/medications.controller.ts)
 - [agenda.controller.ts](file://src/agenda/agenda.controller.ts)
 - [contacts.controller.ts](file://src/contacts/contacts.controller.ts)
+- [elderly-caregiver.e2e-spec.ts](file://test/elderly-caregiver.e2e-spec.ts)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive mobile app dashboard documentation for caregiver and elderly interfaces
-- Documented elderly profile management and care coordination features
-- Updated API documentation to include new mobile app endpoints and workflows
-- Enhanced security considerations with mobile app authentication patterns
-- Added real-time voice assistance and accessibility features
-- Expanded care coordination capabilities with integrated medication, agenda, and contact management
+- Enhanced comprehensive validation of elderly-caregiver linking functionality through E2E testing
+- Added detailed medication management validation via both caregiver and elderly perspectives
+- Implemented contact management testing with overdue alerting and call logging
+- Validated agenda coordination features with creation, update, and deletion workflows
+- Expanded test coverage to validate both caregiver and elderly user experiences
+- Updated API documentation to reflect comprehensive testing validation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -54,15 +55,16 @@
 6. [Detailed Component Analysis](#detailed-component-analysis)
 7. [Mobile App Dashboard Features](#mobile-app-dashboard-features)
 8. [Elderly Care Coordination System](#elderly-care-coordination-system)
-9. [Dependency Analysis](#dependency-analysis)
-10. [Performance Considerations](#performance-considerations)
-11. [Security and Audit Trails](#security-and-audit-trails)
-12. [Troubleshooting Guide](#troubleshooting-guide)
-13. [Conclusion](#conclusion)
-14. [Appendices](#appendices)
+9. [Enhanced Testing Framework](#enhanced-testing-framework)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Performance Considerations](#performance-considerations)
+12. [Security and Audit Trails](#security-and-audit-trails)
+13. [Troubleshooting Guide](#troubleshooting-guide)
+14. [Conclusion](#conclusion)
+15. [Appendices](#appendices)
 
 ## Introduction
-This document describes the comprehensive caregiver integration system with mobile app dashboard, elderly profile management, and care coordination features. The system now includes a complete mobile application ecosystem that enables caregivers to manage elderly care remotely while providing elderly users with intuitive self-management tools. The platform leverages role-based access control (RBAC), JWT authentication, real-time voice assistance, and integrated care coordination across medication management, agenda scheduling, contact management, and interaction tracking.
+This document describes the comprehensive caregiver integration system with mobile app dashboard, elderly profile management, and care coordination features. The system now includes extensive end-to-end testing validation that comprehensively covers both caregiver and elderly user perspectives. The platform leverages role-based access control (RBAC), JWT authentication, real-time voice assistance, and integrated care coordination across medication management, agenda scheduling, contact management, and interaction tracking.
 
 ## Mobile App Architecture
 The system now operates as a hybrid mobile-backend architecture with three main components:
@@ -122,6 +124,7 @@ The caregiver integration system now encompasses a comprehensive mobile applicat
 - **Shared Types**: Comprehensive TypeScript interfaces for all data models and API responses
 - **Authentication Context**: Centralized authentication state management with role-based routing
 - **Voice Assistance**: Integrated speech synthesis for accessibility and hands-free operation
+- **Comprehensive Testing**: End-to-end validation covering both caregiver and elderly user experiences
 
 ```mermaid
 graph TB
@@ -145,6 +148,7 @@ Types["Type Definitions"]
 API["API Client"]
 AuthCtx["Auth Context"]
 Voice["Voice Assistant"]
+Testing["E2E Testing Suite"]
 end
 Auth --> AuthSvc
 CaregiverApp --> AuthSvc
@@ -164,6 +168,8 @@ ContactSvc --> IntSvc
 Types --> API
 API --> AuthCtx
 AuthCtx --> Voice
+Testing --> CaregiverApp
+Testing --> ElderlyApp
 ```
 
 **Diagram sources**
@@ -195,6 +201,12 @@ The system now includes comprehensive mobile app components alongside traditiona
 - **Agenda Management**: Personal scheduling with reminder systems and voice notifications
 - **Contact Management**: Social connection tracking with overdue alerts and call logging
 - **Interaction Logging**: Comprehensive care activity tracking and audit trails
+
+### Testing Framework Components
+- **End-to-End Testing**: Comprehensive validation of caregiver-elderly linking workflows
+- **Feature Validation**: Testing of medication management via both caregiver and elderly perspectives
+- **Data Integrity**: Validation of contact management with overdue alerting and call logging
+- **API Coverage**: Complete endpoint validation for agenda coordination and care statistics
 
 **Section sources**
 - [dashboard.tsx:15-198](file://mobile-app/app/caregiver/dashboard.tsx#L15-L198)
@@ -479,6 +491,101 @@ Social connection tracking with overdue alerting:
 **Section sources**
 - [contacts.tsx:15-114](file://mobile-app/app/elderly/contacts.tsx#L15-L114)
 
+## Enhanced Testing Framework
+
+### Comprehensive E2E Testing Validation
+The system now includes extensive end-to-end testing that validates both caregiver and elderly user experiences:
+
+```mermaid
+flowchart TD
+TestSuite["E2E Test Suite"] --> ElderlyProfile["Elderly Profile Tests"]
+TestSuite --> CaregiverLinking["Caregiver Linking Tests"]
+TestSuite --> MedicationTests["Medication Management Tests"]
+TestSuite --> ContactTests["Contact Management Tests"]
+TestSuite --> AgendaTests["Agenda Management Tests"]
+TestSuite --> ElderlyPerspective["Elderly Perspective Tests"]
+ElderlyProfile --> ProfileEndpoints["Profile Endpoints"]
+CaregiverLinking --> LinkWorkflow["Linking Workflow"]
+MedicationTests --> CaregiverMed["Caregiver Medication"]
+MedicationTests --> ElderlyMed["Elderly Medication"]
+ContactTests --> CaregiverContact["Caregiver Contact"]
+ContactTests --> ElderlyContact["Elderly Contact"]
+AgendaTests --> CaregiverAgenda["Caregiver Agenda"]
+AgendaTests --> ElderlyAgenda["Elderly Agenda"]
+ElderlyPerspective --> ElderlyEndpoints["Elderly Endpoints"]
+```
+
+**Diagram sources**
+- [elderly-caregiver.e2e-spec.ts:11-334](file://test/elderly-caregiver.e2e-spec.ts#L11-L334)
+
+### Elderly Profile Testing
+Validation of elderly profile management through comprehensive test scenarios:
+
+**Test Coverage:**
+- **Profile Retrieval**: GET /api/elderly/profile returns preferredName, autonomyScore, linkCode
+- **Profile Updates**: PATCH /api/elderly/profile updates preferredName with validation
+- **Data Persistence**: Verification that profile changes persist across requests
+
+**Section sources**
+- [elderly-caregiver.e2e-spec.ts:63-103](file://test/elderly-caregiver.e2e-spec.ts#L63-L103)
+
+### Caregiver-Linked Elderly Testing
+Comprehensive validation of the elderly-caregiver linking workflow:
+
+**Test Coverage:**
+- **Linked Elderly Retrieval**: GET /api/caregiver/elderly returns array with at least 1 elderly
+- **Individual Elderly Details**: GET /api/caregiver/elderly/:elderlyProfileId returns elderly details
+- **Access Control**: Validation that only linked elderly profiles are accessible
+
+**Section sources**
+- [elderly-caregiver.e2e-spec.ts:108-128](file://test/elderly-caregiver.e2e-spec.ts#L108-L128)
+
+### Medication Management Testing
+Dual perspective validation of medication management features:
+
+**Caregiver Perspective:**
+- **Medication Retrieval**: GET /api/elderly/:elderlyProfileId/medications returns array with medications
+- **Medication Creation**: POST /api/elderly/:elderlyProfileId/medications creates new medication
+- **Medication Updates**: PATCH /api/elderly/:elderlyProfileId/medications/:id updates existing medication
+- **Medication Deletion**: DELETE /api/elderly/:elderlyProfileId/medications/:id removes medication
+
+**Elderly Perspective:**
+- **Today's Medications**: GET /api/medications/today returns today's medications with status
+
+**Section sources**
+- [elderly-caregiver.e2e-spec.ts:133-200](file://test/elderly-caregiver.e2e-spec.ts#L133-L200)
+
+### Contact Management Testing
+Validation of contact management with overdue alerting and call logging:
+
+**Caregiver Perspective:**
+- **Contact Retrieval**: GET /api/elderly/:elderlyProfileId/contacts returns contact list
+- **Contact Creation**: POST /api/elderly/:elderlyProfileId/contacts creates new contact
+- **Contact Updates**: PATCH /api/elderly/:elderlyProfileId/contacts/:id updates contact
+- **Contact Deletion**: DELETE /api/elderly/:elderlyProfileId/contacts/:id removes contact
+
+**Elderly Perspective:**
+- **Contact List**: GET /api/contacts returns contacts with overdue status
+- **Call Logging**: POST /api/contacts/:id/called logs call completion
+
+**Section sources**
+- [elderly-caregiver.e2e-spec.ts:205-332](file://test/elderly-caregiver.e2e-spec.ts#L205-L332)
+
+### Agenda Management Testing
+Comprehensive validation of agenda coordination features:
+
+**Caregiver Perspective:**
+- **Agenda Retrieval**: GET /api/elderly/:elderlyProfileId/agenda returns agenda events
+- **Event Creation**: POST /api/elderly/:elderlyProfileId/agenda creates new event
+- **Event Updates**: PATCH /api/elderly/:elderlyProfileId/agenda/:id updates event
+- **Event Deletion**: DELETE /api/elderly/:elderlyProfileId/agenda/:id removes event
+
+**Elderly Perspective:**
+- **Today's Agenda**: GET /api/agenda/today returns today's agenda events
+
+**Section sources**
+- [elderly-caregiver.e2e-spec.ts:255-332](file://test/elderly-caregiver.e2e-spec.ts#L255-L332)
+
 ## Dependency Analysis
 The system now includes comprehensive mobile app dependencies alongside backend services:
 
@@ -506,9 +613,12 @@ Swagger["Swagger Documentation"]
 JWT["JWT Authentication"]
 Axios --> API
 end
-subgraph "Shared Dependencies"
-TypeScript["TypeScript Types"]
-Axios --> API
+subgraph "Testing Dependencies"
+Jest["Jest Testing Framework"]
+Supertest["Supertest"]
+Helmet["Helmet Security"]
+ValidationPipe["Validation Pipe"]
+end
 ```
 
 **Diagram sources**
@@ -541,6 +651,11 @@ The mobile app system implements several performance optimization strategies:
 - **Background Sync**: Intelligent background data synchronization
 - **Offline Support**: Basic offline capability for critical functions
 
+**Testing Optimizations:**
+- **Parallel Execution**: Test suites run in parallel for faster validation
+- **Database Isolation**: Separate test databases for clean test environments
+- **Mock Services**: Strategic use of mocks for external dependencies
+
 **Section sources**
 - [dashboard.tsx:32-36](file://mobile-app/app/caregiver/dashboard.tsx#L32-L36)
 - [medications.tsx:22-39](file://mobile-app/app/elderly/medications.tsx#L22-L39)
@@ -568,6 +683,11 @@ The system implements comprehensive security measures:
 - **Data Changes**: Audit trail for all profile and care data modifications
 - **Access Monitoring**: Tracking of system access and usage patterns
 - **Security Events**: Alerting for suspicious activities and unauthorized access attempts
+
+**Testing Security:**
+- **Access Control Validation**: End-to-end testing of role-based access restrictions
+- **Data Integrity Checks**: Validation that unauthorized access attempts are properly blocked
+- **Permission Testing**: Comprehensive testing of caregiver-elderly access permissions
 
 **Section sources**
 - [api.ts:16-22](file://mobile-app/src/services/api.ts#L16-L22)
@@ -618,13 +738,24 @@ The system implements comprehensive security measures:
 - **Cause**: Type definition mismatches or API contract violations
 - **Resolution**: Align mobile app types with backend DTOs, implement proper error handling
 
+### Testing Framework Issues
+**Test Environment Problems:**
+- **Symptom**: E2E tests failing due to database connectivity
+- **Cause**: Test database not properly initialized or connection pool exhaustion
+- **Resolution**: Verify test database configuration, check connection limits, restart test environment
+
+**Authentication in Tests:**
+- **Symptom**: Test authentication failing with valid credentials
+- **Cause**: Test user accounts not properly seeded or validation pipe blocking requests
+- **Resolution**: Verify test user creation, check validation configuration, ensure proper test setup
+
 **Section sources**
 - [dashboard.tsx:27-30](file://mobile-app/app/caregiver/dashboard.tsx#L27-L30)
 - [medications.tsx:30-33](file://mobile-app/app/elderly/medications.tsx#L30-L33)
 - [api.ts:24-43](file://mobile-app/src/services/api.ts#L24-L43)
 
 ## Conclusion
-The caregiver integration system now provides a comprehensive, mobile-first solution for elderly care coordination. The addition of mobile app dashboards, elderly self-management tools, and integrated voice assistance creates a seamless ecosystem that enhances care delivery while improving user experience. The system maintains strong security practices, comprehensive audit trails, and real-time data synchronization across all components. The modular architecture supports future enhancements including real-time communication, advanced analytics, and expanded care coordination features.
+The caregiver integration system now provides a comprehensive, mobile-first solution for elderly care coordination with extensive end-to-end testing validation. The addition of mobile app dashboards, elderly self-management tools, integrated voice assistance, and comprehensive testing framework creates a seamless ecosystem that enhances care delivery while improving user experience. The system maintains strong security practices, comprehensive audit trails, and real-time data synchronization across all components. The modular architecture supports future enhancements including real-time communication, advanced analytics, and expanded care coordination features. The comprehensive testing framework ensures reliability and data integrity across all caregiver and elderly user experiences.
 
 ## Appendices
 
@@ -639,6 +770,7 @@ The system maintains a comprehensive data model supporting all care coordination
 - **Agenda**: Personal scheduling with reminder systems and voice announcements
 - **Contacts**: Social connections with overdue tracking and call logging
 - **Interactions**: Comprehensive care activity tracking and audit trails
+- **Call History**: Detailed call logging with timestamps and contact information
 
 **Mobile App Types:**
 - **UserRole**: Extended role definitions supporting all user types
@@ -647,6 +779,12 @@ The system maintains a comprehensive data model supporting all care coordination
 - **Contact**: Contact management with overdue status
 - **AgendaEvent**: Personal scheduling with reminder capabilities
 - **WeatherData**: Environmental data for elderly comfort and safety
+- **TodayMedication**: Simplified medication data for elderly perspective
+
+**Testing Types:**
+- **ElderlyProfileSummary**: Aggregated data for caregiver dashboard display
+- **MedicationHistory**: Historical medication tracking with confirmation status
+- **ContactWithStatus**: Contact data with overdue calculation and status flags
 
 **Section sources**
 - [schema.prisma:47-212](file://prisma/schema.prisma#L47-L212)
@@ -660,8 +798,18 @@ The system maintains a comprehensive data model supporting all care coordination
 - **Agenda Management**: Today's events, scheduling, and voice announcements
 - **Contact Management**: Contact lists, overdue tracking, and call logging
 - **Voice Assistance**: Personalized audio feedback and accessibility features
+- **Testing Endpoints**: Comprehensive validation endpoints for all features
+
+**Testing Coverage:**
+- **Elderly Profile**: Complete CRUD operations with validation
+- **Caregiver Linking**: End-to-end linking workflow validation
+- **Medication Management**: Dual perspective validation (caregiver/elderly)
+- **Contact Management**: Overdue alerting and call logging validation
+- **Agenda Management**: Event lifecycle validation
+- **Access Control**: Role-based permission testing
 
 **Section sources**
 - [medications.controller.ts:96-102](file://src/medications/medications.controller.ts#L96-L102)
 - [agenda.controller.ts:97-103](file://src/agenda/agenda.controller.ts#L97-L103)
 - [contacts.controller.ts:92-100](file://src/contacts/contacts.controller.ts#L92-L100)
+- [elderly-caregiver.e2e-spec.ts:11-334](file://test/elderly-caregiver.e2e-spec.ts#L11-L334)
