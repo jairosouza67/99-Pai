@@ -1,41 +1,43 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async registerToken(userId: string, registerDto: RegisterTokenDto) {
     // Check if token already exists for this user
-    const existing = await this.prisma.pushtoken.findUnique({
-      where: {
-        userId_token: {
-          userId,
-          token: registerDto.pushToken,
-        },
-      },
-    });
+    const { data: existing, error: findError } = await this.supabase.db
+      .from('pushtoken')
+      .select('id')
+      .eq('userId', userId)
+      .eq('token', registerDto.pushToken)
+      .maybeSingle();
 
     if (existing) {
       // Update platform if changed
-      await this.prisma.pushtoken.update({
-        where: { id: existing.id },
-        data: { platform: registerDto.platform },
-      });
+      const { error: updateError } = await this.supabase.db
+        .from('pushtoken')
+        .update({ platform: registerDto.platform })
+        .eq('id', existing.id);
+
+      if (updateError) throw new Error(updateError.message);
 
       this.logger.log(`Push token updated for user ${userId}`);
     } else {
       // Create new token
-      await this.prisma.pushtoken.create({
-        data: {
+      const { error: insertError } = await this.supabase.db
+        .from('pushtoken')
+        .insert({
           userId,
           token: registerDto.pushToken,
           platform: registerDto.platform,
-        },
-      });
+        });
+
+      if (insertError) throw new Error(insertError.message);
 
       this.logger.log(`Push token registered for user ${userId}`);
     }
@@ -45,9 +47,12 @@ export class NotificationsService {
 
   async sendNotification(userId: string, title: string, body: string) {
     // Get all push tokens for this user
-    const tokens = await this.prisma.pushtoken.findMany({
-      where: { userId },
-    });
+    const { data: tokens, error } = await this.supabase.db
+      .from('pushtoken')
+      .select('*')
+      .eq('userId', userId);
+
+    if (error) throw new Error(error.message);
 
     if (tokens.length === 0) {
       this.logger.warn(`No push tokens found for user ${userId}`);

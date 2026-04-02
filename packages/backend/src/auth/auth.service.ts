@@ -2,22 +2,23 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
-import { Role } from '@prisma/client';
+import { Role } from '../common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private supabase: SupabaseService,
     private jwtService: JwtService,
   ) {}
 
@@ -34,18 +35,24 @@ export class AuthService {
     } = signupDto;
 
     // Check if user exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const { data: existingUser } = await this.supabase.db
+      .from('user')
+      .select('id')
+      .eq('email', email)
+      .single();
+
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
     // Check if cellphone is already registered (if provided)
     if (cellphone) {
-      const existingCellphone = await this.prisma.user.findUnique({
-        where: { cellphone },
-      });
+      const { data: existingCellphone } = await this.supabase.db
+        .from('user')
+        .select('id')
+        .eq('cellphone', cellphone)
+        .single();
+
       if (existingCellphone) {
         throw new ConflictException('Cellphone already registered');
       }
@@ -55,8 +62,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user with optional PAI fields
-    const user = await this.prisma.user.create({
-      data: {
+    const { data: user, error } = await this.supabase.db
+      .from('user')
+      .insert({
         email,
         password: hashedPassword,
         name,
@@ -64,19 +72,24 @@ export class AuthService {
         cellphone,
         nickname,
         document,
-        birthday: birthday ? new Date(birthday) : undefined,
-      },
-    });
+        birthday: birthday ? new Date(birthday).toISOString() : undefined,
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     // Only create elderly profile with link code if role is elderly
     if (role === Role.elderly) {
       const linkCode = this.generateLinkCode();
-      await this.prisma.elderlyprofile.create({
-        data: {
+      const { error: profileError } = await this.supabase.db
+        .from('elderlyprofile')
+        .insert({
           userId: user.id,
           linkCode,
-        },
-      });
+        });
+
+      if (profileError) throw new InternalServerErrorException(profileError.message);
     }
     // Note: caregiver, provider, and admin roles do NOT create elderlyprofile
 
@@ -104,7 +117,12 @@ export class AuthService {
     const { email, password } = loginDto;
 
     // Find user
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('*')
+      .eq('email', email)
+      .single();
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -136,20 +154,19 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        elderlyProfile: {
-          select: {
-            onboardingComplete: true,
-          },
-        },
-      },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, email, name, role, elderlyprofile(onboardingComplete)')
+      .eq('id', userId)
+      .single();
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+
+    const elderlyProfile = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0]
+      : user.elderlyprofile;
 
     return {
       user: {
@@ -157,7 +174,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        onboardingComplete: user.elderlyProfile?.onboardingComplete ?? false,
+        onboardingComplete: elderlyProfile?.onboardingComplete ?? false,
       },
     };
   }

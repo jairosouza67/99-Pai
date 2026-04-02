@@ -1,18 +1,21 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
-const fs = require('fs');
-const config = getDefaultConfig(__dirname);
-const nodeModulesPath = path.resolve(__dirname, 'node_modules');
-const isSymlink = fs.lstatSync(nodeModulesPath).isSymbolicLink();
-if (isSymlink) {
-  const realNodeModules = fs.realpathSync(nodeModulesPath);
-  config.watchFolders = [realNodeModules];
-  config.resolver.nodeModulesPaths = [realNodeModules];
-  config.resolver.resolveRequest = (context, moduleName, platform) => {
-    if (moduleName.startsWith('./opt/hostedapp')) {
-      moduleName = moduleName.replace(/^\.\//, '/');
-    }
-    return context.resolveRequest(context, moduleName, platform);
-  };
-}
+
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '../..');
+
+const config = getDefaultConfig(projectRoot);
+
+// 1. Watch all files within the monorepo
+config.watchFolders = [workspaceRoot];
+
+// 2. Let Metro know where to resolve packages and in what order
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+];
+
+// 3. Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
+config.resolver.disableHierarchicalLookup = true;
+
 module.exports = config;

@@ -7,8 +7,7 @@ import {
   IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-
+import { Role } from '../../common/enums/role.enum';
 export class SignupDto {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()

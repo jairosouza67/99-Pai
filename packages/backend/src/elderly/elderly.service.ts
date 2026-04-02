@@ -2,23 +2,25 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { UpdateElderlyProfileDto } from './dto/update-profile.dto';
-import { Role } from '@prisma/client';
+import { Role } from '../common/enums/role.enum';
 
 @Injectable()
 export class ElderlyService {
   private readonly logger = new Logger(ElderlyService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, role, elderlyprofile(*)')
+      .eq('id', userId)
+      .single();
 
     if (!user || user.role !== Role.elderly) {
       throw new ForbiddenException(
@@ -26,27 +28,32 @@ export class ElderlyService {
       );
     }
 
-    if (!user.elderlyProfile) {
+    const elderlyProfile = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0]
+      : user.elderlyprofile;
+
+    if (!elderlyProfile) {
       throw new NotFoundException('Elderly profile not found');
     }
 
     return {
-      id: user.elderlyProfile.id,
-      userId: user.elderlyProfile.userId,
-      preferredName: user.elderlyProfile.preferredName,
-      autonomyScore: user.elderlyProfile.autonomyScore,
-      interactionTimes: user.elderlyProfile.interactionTimes,
-      location: user.elderlyProfile.location,
-      onboardingComplete: user.elderlyProfile.onboardingComplete,
-      linkCode: user.elderlyProfile.linkCode,
+      id: elderlyProfile.id,
+      userId: elderlyProfile.userId,
+      preferredName: elderlyProfile.preferredName,
+      autonomyScore: elderlyProfile.autonomyScore,
+      interactionTimes: elderlyProfile.interactionTimes,
+      location: elderlyProfile.location,
+      onboardingComplete: elderlyProfile.onboardingComplete,
+      linkCode: elderlyProfile.linkCode,
     };
   }
 
   async updateProfile(userId: string, updateDto: UpdateElderlyProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, role, elderlyprofile(id)')
+      .eq('id', userId)
+      .single();
 
     if (!user || user.role !== Role.elderly) {
       throw new ForbiddenException(
@@ -54,16 +61,24 @@ export class ElderlyService {
       );
     }
 
-    if (!user.elderlyProfile) {
+    const elderlyProfile = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0]
+      : user.elderlyprofile;
+
+    if (!elderlyProfile) {
       throw new NotFoundException('Elderly profile not found');
     }
 
-    const updated = await this.prisma.elderlyprofile.update({
-      where: { id: user.elderlyProfile.id },
-      data: updateDto,
-    });
+    const { data: updated, error } = await this.supabase.db
+      .from('elderlyprofile')
+      .update(updateDto)
+      .eq('id', elderlyProfile.id)
+      .select()
+      .single();
 
-    this.logger.log(`Elderly profile updated: ${user.email}`);
+    if (error) throw new InternalServerErrorException(error.message);
+
+    this.logger.log(`Elderly profile updated: ${user.id}`);
 
     return {
       id: updated.id,

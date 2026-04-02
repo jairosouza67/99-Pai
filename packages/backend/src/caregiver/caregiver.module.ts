@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CaregiverService } from './caregiver.service';
 import { CaregiverController } from './caregiver.controller';
-import { PrismaModule } from '../prisma/prisma.module';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [SupabaseModule],
   controllers: [CaregiverController],
   providers: [CaregiverService],
   exports: [CaregiverService],

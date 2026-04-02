@@ -1,11 +1,11 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async getWeather(userId: string, location?: string) {
     // Get user's location if not provided
@@ -22,13 +22,32 @@ export class WeatherService {
       lon = coords.lon;
     } else {
       // Try to get from user's elderly profile
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { elderlyProfile: true },
-      });
+      const { data: user } = await this.supabase.db
+        .from('user')
+        .select(`
+          id,
+          elderlyprofile (
+            id,
+            location
+          )
+        `)
+        .eq('id', userId)
+        .single();
 
-      if (user?.elderlyProfile?.location) {
-        const coords = this.getCoordinatesForCity(user.elderlyProfile.location);
+      const elderlyProfile = user?.elderlyprofile;
+      
+      let profileLoc = null;
+      if (elderlyProfile) {
+        if (Array.isArray(elderlyProfile)) {
+          profileLoc = elderlyProfile[0]?.location;
+        } else {
+          profileLoc = (elderlyProfile as any).location;
+        }
+      }
+
+      if (profileLoc) {
+        const location = profileLoc;
+        const coords = this.getCoordinatesForCity(location);
         if (!coords) {
           throw new BadRequestException('User location not found');
         }

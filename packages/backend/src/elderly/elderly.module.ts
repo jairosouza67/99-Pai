@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ElderlyService } from './elderly.service';
 import { ElderlyController } from './elderly.controller';
-import { PrismaModule } from '../prisma/prisma.module';
+import { SupabaseModule } from '../supabase/supabase.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [SupabaseModule],
   controllers: [ElderlyController],
   providers: [ElderlyService],
   exports: [ElderlyService],

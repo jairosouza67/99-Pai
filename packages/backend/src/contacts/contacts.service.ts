@@ -2,13 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CaregiverService } from '../caregiver/caregiver.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
-import { Role } from '@prisma/client';
+import { Role } from '../common/enums/role.enum';
 import { differenceInDays } from 'date-fns';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class ContactsService {
   private readonly logger = new Logger(ContactsService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private supabase: SupabaseService,
     private caregiverService: CaregiverService,
   ) {}
 
@@ -29,12 +30,15 @@ export class ContactsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const contacts = await this.prisma.contact.findMany({
-      where: { elderlyProfileId },
-      orderBy: { name: 'asc' },
-    });
+    const { data: contacts, error } = await this.supabase.db
+      .from('contact')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .order('name', { ascending: true });
 
-    return { items: contacts };
+    if (error) throw new InternalServerErrorException(error.message);
+
+    return { items: contacts || [] };
   }
 
   async createContact(
@@ -50,12 +54,16 @@ export class ContactsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const contact = await this.prisma.contact.create({
-      data: {
+    const { data: contact, error } = await this.supabase.db
+      .from('contact')
+      .insert({
         elderlyProfileId,
         ...createDto,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(
       `Contact created for elderly profile ${elderlyProfileId}: ${contact.name}`,
@@ -78,18 +86,25 @@ export class ContactsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const contact = await this.prisma.contact.findFirst({
-      where: { id: contactId, elderlyProfileId },
-    });
+    const { data: contact } = await this.supabase.db
+      .from('contact')
+      .select('id')
+      .eq('id', contactId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!contact) {
       throw new NotFoundException('Contact not found');
     }
 
-    const updated = await this.prisma.contact.update({
-      where: { id: contactId },
-      data: updateDto,
-    });
+    const { data: updated, error } = await this.supabase.db
+      .from('contact')
+      .update(updateDto)
+      .eq('id', contactId)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Contact updated: ${contactId}`);
 
@@ -109,15 +124,23 @@ export class ContactsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const contact = await this.prisma.contact.findFirst({
-      where: { id: contactId, elderlyProfileId },
-    });
+    const { data: contact } = await this.supabase.db
+      .from('contact')
+      .select('id')
+      .eq('id', contactId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!contact) {
       throw new NotFoundException('Contact not found');
     }
 
-    await this.prisma.contact.delete({ where: { id: contactId } });
+    const { error } = await this.supabase.db
+      .from('contact')
+      .delete()
+      .eq('id', contactId);
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Contact deleted: ${contactId}`);
 
@@ -125,26 +148,34 @@ export class ContactsService {
   }
 
   async getContactsForElderly(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, role, elderlyprofile!inner(id)')
+      .eq('id', userId)
+      .single();
 
-    if (!user || user.role !== Role.elderly || !user.elderlyProfile) {
+    if (!user || user.role !== Role.elderly || !user.elderlyprofile) {
       throw new ForbiddenException(
         'Only elderly users can access this endpoint',
       );
     }
 
-    const contacts = await this.prisma.contact.findMany({
-      where: { elderlyProfileId: user.elderlyProfile.id },
-      orderBy: { name: 'asc' },
-    });
+    const elderlyProfileId = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0].id
+      : (user.elderlyprofile as any).id;
+
+    const { data: contacts, error } = await this.supabase.db
+      .from('contact')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .order('name', { ascending: true });
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     const now = new Date();
-    const items = contacts.map((contact: (typeof contacts)[number]) => {
+    const items = (contacts || []).map((contact: any) => {
       const daysOverdue = contact.lastCallAt
-        ? differenceInDays(now, contact.lastCallAt) - contact.thresholdDays
+        ? differenceInDays(now, new Date(contact.lastCallAt)) - contact.thresholdDays
         : 999;
 
       return {
@@ -158,41 +189,53 @@ export class ContactsService {
   }
 
   async markCalled(userId: string, contactId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, role, elderlyprofile!inner(id)')
+      .eq('id', userId)
+      .single();
 
-    if (!user || user.role !== Role.elderly || !user.elderlyProfile) {
+    if (!user || user.role !== Role.elderly || !user.elderlyprofile) {
       throw new ForbiddenException(
         'Only elderly users can access this endpoint',
       );
     }
 
-    const elderlyProfileId = user.elderlyProfile.id;
+    const elderlyProfileId = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0].id
+      : (user.elderlyprofile as any).id;
 
-    const contact = await this.prisma.contact.findFirst({
-      where: { id: contactId, elderlyProfileId },
-    });
+    const { data: contact } = await this.supabase.db
+      .from('contact')
+      .select('id')
+      .eq('id', contactId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!contact) {
       throw new NotFoundException('Contact not found');
     }
 
-    const now = new Date();
-    const updated = await this.prisma.contact.update({
-      where: { id: contactId },
-      data: { lastCallAt: now },
-    });
+    const now = new Date().toISOString();
+    const { data: updated, error: updateError } = await this.supabase.db
+      .from('contact')
+      .update({ lastCallAt: now })
+      .eq('id', contactId)
+      .select()
+      .single();
+
+    if (updateError) throw new InternalServerErrorException(updateError.message);
 
     // Log call history
-    await this.prisma.callhistory.create({
-      data: {
+    const { error: historyError } = await this.supabase.db
+      .from('callhistory')
+      .insert({
         elderlyProfileId,
         contactId,
         calledAt: now,
-      },
-    });
+      });
+
+    if (historyError) throw new InternalServerErrorException(historyError.message);
 
     this.logger.log(`Call logged for contact: ${contactId}`);
 
@@ -218,27 +261,26 @@ export class ContactsService {
 
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      this.prisma.callhistory.findMany({
-        where: { elderlyProfileId },
-        include: { contact: true },
-        orderBy: { calledAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.callhistory.count({ where: { elderlyProfileId } }),
-    ]);
+    const { data: items, count: total, error } = await this.supabase.db
+      .from('callhistory')
+      .select('*, contact(name)', { count: 'exact' })
+      .eq('elderlyProfileId', elderlyProfileId)
+      .order('calledAt', { ascending: false })
+      .range(skip, skip + limit - 1);
 
-    const totalPages = Math.ceil(total / limit);
+    if (error) throw new InternalServerErrorException(error.message);
+
+    const totalCount = total ?? 0;
+    const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      items: items.map((h: (typeof items)[number]) => ({
+      items: (items || []).map((h: any) => ({
         id: h.id,
         contactId: h.contactId,
-        contactName: h.contact.name,
+        contactName: h.contact?.name || 'Unknown',
         calledAt: h.calledAt,
       })),
-      total,
+      total: totalCount,
       page,
       totalPages,
     };

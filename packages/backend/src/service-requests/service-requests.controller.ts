@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,8 +21,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
-import { Role } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '../common/enums/role.enum';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @ApiTags('Service Requests')
 @ApiBearerAuth()
@@ -30,18 +31,20 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ServiceRequestsController {
   constructor(
     private readonly serviceRequestsService: ServiceRequestsService,
-    private readonly prisma: PrismaService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   /**
    * Get elderly profile ID from user
    */
   private async getElderlyProfileId(userId: string): Promise<string> {
-    const profile = await this.prisma.elderlyprofile.findUnique({
-      where: { userId },
-    });
+    const { data: profile, error } = await this.supabase.db
+      .from('elderlyprofile')
+      .select('id')
+      .eq('userId', userId)
+      .single();
 
-    if (!profile) {
+    if (error || !profile) {
       throw new NotFoundException('Elderly profile not found for this user');
     }
 

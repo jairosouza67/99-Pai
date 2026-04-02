@@ -3,13 +3,13 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CaregiverService } from '../caregiver/caregiver.service';
 import { CreateMedicationDto } from './dto/create-medication.dto';
 import { UpdateMedicationDto } from './dto/update-medication.dto';
 import { ConfirmMedicationDto } from './dto/confirm-medication.dto';
-import { Role } from '@prisma/client';
 import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class MedicationsService {
   private readonly logger = new Logger(MedicationsService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private supabase: SupabaseService,
     private caregiverService: CaregiverService,
   ) {}
 
@@ -30,12 +30,15 @@ export class MedicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const medications = await this.prisma.medication.findMany({
-      where: { elderlyProfileId },
-      orderBy: { time: 'asc' },
-    });
+    const { data: medications, error } = await this.supabase.db
+      .from('medication')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .order('time', { ascending: true });
 
-    return { items: medications };
+    if (error) throw new InternalServerErrorException(error.message);
+
+    return { items: medications || [] };
   }
 
   async createMedication(
@@ -51,12 +54,17 @@ export class MedicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const medication = await this.prisma.medication.create({
-      data: {
+    const { data: medication, error } = await this.supabase.db
+      .from('medication')
+      .insert({
         elderlyProfileId,
+        active: true, // Defaulting if not in createDto
         ...createDto,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(
       `Medication created for elderly profile ${elderlyProfileId}: ${medication.name}`,
@@ -79,18 +87,25 @@ export class MedicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const medication = await this.prisma.medication.findFirst({
-      where: { id: medicationId, elderlyProfileId },
-    });
+    const { data: medication } = await this.supabase.db
+      .from('medication')
+      .select('id')
+      .eq('id', medicationId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!medication) {
       throw new NotFoundException('Medication not found');
     }
 
-    const updated = await this.prisma.medication.update({
-      where: { id: medicationId },
-      data: updateDto,
-    });
+    const { data: updated, error } = await this.supabase.db
+      .from('medication')
+      .update(updateDto)
+      .eq('id', medicationId)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Medication updated: ${medicationId}`);
 
@@ -110,15 +125,23 @@ export class MedicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const medication = await this.prisma.medication.findFirst({
-      where: { id: medicationId, elderlyProfileId },
-    });
+    const { data: medication } = await this.supabase.db
+      .from('medication')
+      .select('id')
+      .eq('id', medicationId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!medication) {
       throw new NotFoundException('Medication not found');
     }
 
-    await this.prisma.medication.delete({ where: { id: medicationId } });
+    const { error } = await this.supabase.db
+      .from('medication')
+      .delete()
+      .eq('id', medicationId);
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Medication deleted: ${medicationId}`);
 
@@ -126,38 +149,49 @@ export class MedicationsService {
   }
 
   async getTodayMedications(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user, error: userError } = await this.supabase.db
+      .from('user')
+      .select('role, elderlyprofile!inner(id)')
+      .eq('id', userId)
+      .single();
 
-    if (!user || user.role !== Role.elderly || !user.elderlyProfile) {
+    if (userError) throw new InternalServerErrorException(userError.message);
+
+    if (!user || user.role !== 'elderly' || !user.elderlyprofile || user.elderlyprofile.length === 0) {
       throw new ForbiddenException(
         'Only elderly users can access this endpoint',
       );
     }
 
-    const elderlyProfileId = user.elderlyProfile.id;
+    const elderlyProfileId = Array.isArray(user.elderlyprofile) ? user.elderlyprofile[0].id : (user.elderlyprofile as any).id;
 
-    const medications = await this.prisma.medication.findMany({
-      where: { elderlyProfileId, active: true },
-      orderBy: { time: 'asc' },
-    });
+    const { data: medications, error: medError } = await this.supabase.db
+      .from('medication')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .eq('active', true)
+      .order('time', { ascending: true });
+
+    if (medError) throw new InternalServerErrorException(medError.message);
 
     const today = new Date();
-    const histories = await this.prisma.medicationhistory.findMany({
-      where: {
-        elderlyProfileId,
-        scheduledDate: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
-        },
-      },
-    });
+    const startObj = startOfDay(today).toISOString();
+    const endObj = endOfDay(today).toISOString();
 
-    const items = medications.map((med: (typeof medications)[number]) => {
-      const history = histories.find(
-        (h: (typeof histories)[number]) => h.medicationId === med.id,
+    const { data: histories, error: histError } = await this.supabase.db
+      .from('medicationhistory')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .gte('scheduledDate', startObj)
+      .lte('scheduledDate', endObj);
+
+    if (histError) throw new InternalServerErrorException(histError.message);
+
+    if (!medications) return { items: [] };
+
+    const items = medications.map((med: any) => {
+      const history = (histories || []).find(
+        (h: any) => h.medicationId === med.id,
       );
       let status: 'pending' | 'confirmed' | 'missed' = 'pending';
 
@@ -183,62 +217,79 @@ export class MedicationsService {
     medicationId: string,
     confirmDto: ConfirmMedicationDto,
   ) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user, error: userError } = await this.supabase.db
+      .from('user')
+      .select('role, elderlyprofile!inner(id)')
+      .eq('id', userId)
+      .single();
 
-    if (!user || user.role !== Role.elderly || !user.elderlyProfile) {
+    if (userError) throw new InternalServerErrorException(userError.message);
+
+    if (!user || user.role !== 'elderly' || !user.elderlyprofile || user.elderlyprofile.length === 0) {
       throw new ForbiddenException(
         'Only elderly users can access this endpoint',
       );
     }
 
-    const elderlyProfileId = user.elderlyProfile.id;
+    const elderlyProfileId = Array.isArray(user.elderlyprofile) ? user.elderlyprofile[0].id : (user.elderlyprofile as any).id;
 
-    const medication = await this.prisma.medication.findFirst({
-      where: { id: medicationId, elderlyProfileId },
-    });
+    const { data: medication } = await this.supabase.db
+      .from('medication')
+      .select('id')
+      .eq('id', medicationId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!medication) {
       throw new NotFoundException('Medication not found');
     }
 
     const now = new Date();
-    const scheduledDate = startOfDay(now);
+    const scheduledDate = startOfDay(now).toISOString();
+    const nowIso = now.toISOString();
+    const endObj = endOfDay(now).toISOString();
 
     // Check if already confirmed today
-    const existing = await this.prisma.medicationhistory.findFirst({
-      where: {
-        elderlyProfileId,
-        medicationId,
-        scheduledDate: {
-          gte: startOfDay(now),
-          lte: endOfDay(now),
-        },
-      },
-    });
+    const { data: existing } = await this.supabase.db
+      .from('medicationhistory')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .eq('medicationId', medicationId)
+      .gte('scheduledDate', scheduledDate)
+      .lte('scheduledDate', endObj)
+      .single();
 
     let history;
+    let histError;
     if (existing) {
-      history = await this.prisma.medicationhistory.update({
-        where: { id: existing.id },
-        data: {
+      const res = await this.supabase.db
+        .from('medicationhistory')
+        .update({
           confirmed: confirmDto.confirmed,
-          respondedAt: now,
-        },
-      });
+          respondedAt: nowIso,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      history = res.data;
+      histError = res.error;
     } else {
-      history = await this.prisma.medicationhistory.create({
-        data: {
+      const res = await this.supabase.db
+        .from('medicationhistory')
+        .insert({
           elderlyProfileId,
           medicationId,
           confirmed: confirmDto.confirmed,
           scheduledDate,
-          respondedAt: now,
-        },
-      });
+          respondedAt: nowIso,
+        })
+        .select()
+        .single();
+      history = res.data;
+      histError = res.error;
     }
+    
+    if (histError) throw new InternalServerErrorException(histError.message);
 
     this.logger.log(
       `Medication ${confirmDto.confirmed ? 'confirmed' : 'marked as missed'}: ${medicationId}`,
@@ -268,40 +319,36 @@ export class MedicationsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const where: any = { elderlyProfileId };
+    let query = this.supabase.db
+      .from('medicationhistory')
+      .select('*, medication(*)', { count: 'exact' })
+      .eq('elderlyProfileId', elderlyProfileId);
 
     if (from || to) {
-      where.scheduledDate = {};
-      if (from) where.scheduledDate.gte = new Date(from);
-      if (to) where.scheduledDate.lte = new Date(to);
+      if (from) query = query.gte('scheduledDate', new Date(from).toISOString());
+      if (to) query = query.lte('scheduledDate', new Date(to).toISOString());
     }
 
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      this.prisma.medicationhistory.findMany({
-        where,
-        include: {
-          medication: true,
-        },
-        orderBy: { scheduledDate: 'desc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.medicationhistory.count({ where }),
-    ]);
+    const { data: items, count: total, error } = await query
+      .order('scheduledDate', { ascending: false })
+      .range(skip, skip + limit - 1);
 
-    const totalPages = Math.ceil(total / limit);
+    if (error) throw new InternalServerErrorException(error.message);
+
+    const totalCount = total ?? 0;
+    const totalPages = Math.ceil(totalCount / limit);
 
     return {
-      items: items.map((h: (typeof items)[number]) => ({
+      items: (items || []).map((h: any) => ({
         id: h.id,
         medicationId: h.medicationId,
-        medicationName: h.medication.name,
+        medicationName: h.medication?.name || 'Unknown',
         confirmed: h.confirmed,
         timestamp: h.respondedAt || h.createdAt,
       })),
-      total,
+      total: total || 0,
       page,
       totalPages,
     };

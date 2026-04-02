@@ -1,6 +1,6 @@
 import { IsString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Platform } from '@prisma/client';
+import { Platform } from '../../common/enums/platform.enum';
 
 export class RegisterTokenDto {
   @ApiProperty({ example: 'expo-push-token-xxx' })

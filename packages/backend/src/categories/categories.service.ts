@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import {
   CreateCategoryDto,
   UpdateCategoryDto,
@@ -14,24 +14,21 @@ import {
 export class CategoriesService {
   private readonly logger = new Logger(CategoriesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly supabase: SupabaseService) {}
 
   /**
    * Find all root categories (where parentId is null) with subcategories included
    */
   async findAll() {
     this.logger.log('Fetching all root categories');
-    return this.prisma.category.findMany({
-      where: { parentId: null },
-      include: {
-        subcategories: {
-          include: {
-            subcategories: true,
-          },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
+    const { data, error } = await this.supabase.db
+      .from('category')
+      .select('*, subcategories:category(*, subcategories:category(*))')
+      .is('parentId', null)
+      .order('name', { ascending: true });
+      
+    if (error) throw new BadRequestException(error.message);
+    return data;
   }
 
   /**
@@ -39,17 +36,15 @@ export class CategoriesService {
    */
   async findOne(id: string) {
     this.logger.log(`Fetching category with id: ${id}`);
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-      include: {
-        subcategories: {
-          include: {
-            subcategories: true,
-          },
-        },
-        parent: true,
-      },
-    });
+    const { data: category, error } = await this.supabase.db
+      .from('category')
+      .select('*, parent:category(*), subcategories:category(*, subcategories:category(*))')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new BadRequestException(error.message);
+    }
 
     if (!category) {
       throw new NotFoundException(`Category with id ${id} not found`);
@@ -66,9 +61,12 @@ export class CategoriesService {
 
     // If parentId is provided, verify the parent exists
     if (dto.parentId) {
-      const parent = await this.prisma.category.findUnique({
-        where: { id: dto.parentId },
-      });
+      const { data: parent } = await this.supabase.db
+        .from('category')
+        .select('id')
+        .eq('id', dto.parentId)
+        .single();
+        
       if (!parent) {
         throw new NotFoundException(
           `Parent category with id ${dto.parentId} not found`,
@@ -76,16 +74,17 @@ export class CategoriesService {
       }
     }
 
-    return this.prisma.category.create({
-      data: {
+    const { data, error } = await this.supabase.db
+      .from('category')
+      .insert({
         name: dto.name,
         parentId: dto.parentId || null,
-      },
-      include: {
-        subcategories: true,
-        parent: true,
-      },
-    });
+      })
+      .select('*, parent:category(*), subcategories:category(*)')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data;
   }
 
   /**
@@ -95,9 +94,11 @@ export class CategoriesService {
     this.logger.log(`Updating category with id: ${id}`);
 
     // Verify category exists
-    const existing = await this.prisma.category.findUnique({
-      where: { id },
-    });
+    const { data: existing } = await this.supabase.db
+      .from('category')
+      .select('id')
+      .eq('id', id)
+      .single();
 
     if (!existing) {
       throw new NotFoundException(`Category with id ${id} not found`);
@@ -110,9 +111,12 @@ export class CategoriesService {
       }
 
       if (dto.parentId !== null) {
-        const parent = await this.prisma.category.findUnique({
-          where: { id: dto.parentId },
-        });
+        const { data: parent } = await this.supabase.db
+          .from('category')
+          .select('id')
+          .eq('id', dto.parentId)
+          .single();
+          
         if (!parent) {
           throw new NotFoundException(
             `Parent category with id ${dto.parentId} not found`,
@@ -121,17 +125,19 @@ export class CategoriesService {
       }
     }
 
-    return this.prisma.category.update({
-      where: { id },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.parentId !== undefined && { parentId: dto.parentId }),
-      },
-      include: {
-        subcategories: true,
-        parent: true,
-      },
-    });
+    const updateData: any = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.parentId !== undefined) updateData.parentId = dto.parentId;
+
+    const { data, error } = await this.supabase.db
+      .from('category')
+      .update(updateData)
+      .eq('id', id)
+      .select('*, parent:category(*), subcategories:category(*)')
+      .single();
+      
+    if (error) throw new BadRequestException(error.message);
+    return data;
   }
 
   /**
@@ -141,38 +147,46 @@ export class CategoriesService {
     this.logger.log(`Deleting category with id: ${id}`);
 
     // Verify category exists
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-      include: {
-        subcategories: true,
-        offerings: true,
-        subOfferings: true,
-      },
-    });
+    const { data: category } = await this.supabase.db
+      .from('category')
+      .select(`
+        id,
+        subcategories:category(id),
+        offerings:offering!categoryId(id),
+        subofferings:offering!subCategoryId(id)
+      `)
+      .eq('id', id)
+      .single();
 
     if (!category) {
       throw new NotFoundException(`Category with id ${id} not found`);
     }
 
+    const subcategoriesCount = category.subcategories ? (Array.isArray(category.subcategories) ? category.subcategories.length : 1) : 0;
     // Check for child categories
-    if (category.subcategories.length > 0) {
+    if (subcategoriesCount > 0) {
       throw new BadRequestException(
-        `Cannot delete category: it has ${category.subcategories.length} subcategories`,
+        `Cannot delete category: it has ${subcategoriesCount} subcategories`,
       );
     }
 
+    const offeringsCount = category.offerings ? (Array.isArray(category.offerings) ? category.offerings.length : 1) : 0;
+    const subOfferingsCount = category.subofferings ? (Array.isArray(category.subofferings) ? category.subofferings.length : 1) : 0;
+    const totalOfferings = offeringsCount + subOfferingsCount;
+
     // Check for offerings referencing this category
-    if (category.offerings.length > 0 || category.subOfferings.length > 0) {
-      const totalOfferings =
-        category.offerings.length + category.subOfferings.length;
+    if (totalOfferings > 0) {
       throw new BadRequestException(
         `Cannot delete category: it is referenced by ${totalOfferings} offerings`,
       );
     }
 
-    await this.prisma.category.delete({
-      where: { id },
-    });
+    const { error } = await this.supabase.db
+      .from('category')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw new BadRequestException(error.message);
 
     return { message: 'Category deleted successfully' };
   }

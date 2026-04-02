@@ -4,10 +4,17 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateServiceRequestDto } from './dto/create-service-request.dto';
-import { ServiceRequestStatus } from '@prisma/client';
+
+export enum ServiceRequestStatus {
+  pending = 'pending',
+  confirmed = 'confirmed',
+  completed = 'completed',
+  cancelled = 'cancelled',
+}
 
 export interface ConflictValidationResult {
   valid: boolean;
@@ -24,7 +31,7 @@ export interface ServiceRequestCreateResult {
 export class ServiceRequestsService {
   private readonly logger = new Logger(ServiceRequestsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly supabase: SupabaseService) {}
 
   /**
    * Parse "HH:mm" time string to total minutes since midnight
@@ -68,12 +75,13 @@ export class ServiceRequestsService {
     const requestedTime = this.formatTimeFromDate(requestedDateTime);
 
     // 1. Check medication schedule conflicts (30-min window)
-    const activeMedications = await this.prisma.medication.findMany({
-      where: {
-        elderlyProfileId,
-        active: true,
-      },
-    });
+    const { data: activeMedications, error: medError } = await this.supabase.db
+      .from('medication')
+      .select('name, time')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .eq('active', true);
+      
+    if (medError) throw new InternalServerErrorException(medError.message);
 
     for (const med of activeMedications) {
       if (this.isTimeConflict(requestedTime, med.time, 30)) {
@@ -88,18 +96,17 @@ export class ServiceRequestsService {
     const windowStart = new Date(requestedDateTime.getTime() - oneHourMs);
     const windowEnd = new Date(requestedDateTime.getTime() + oneHourMs);
 
-    const agendaEvents = await this.prisma.agendaevent.findMany({
-      where: {
-        elderlyProfileId,
-        dateTime: {
-          gte: windowStart,
-          lte: windowEnd,
-        },
-      },
-    });
+    const { data: agendaEvents, error: agendaError } = await this.supabase.db
+      .from('agendaevent')
+      .select('description, dateTime')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .gte('dateTime', windowStart.toISOString())
+      .lte('dateTime', windowEnd.toISOString());
 
-    for (const event of agendaEvents) {
-      const eventTime = this.formatTimeFromDate(event.dateTime);
+    if (agendaError) throw new InternalServerErrorException(agendaError.message);
+
+    for (const event of agendaEvents || []) {
+      const eventTime = this.formatTimeFromDate(new Date(event.dateTime));
       conflicts.push(
         `Conflito com evento "${event.description}" \u00e0s ${eventTime}`,
       );
@@ -142,9 +149,15 @@ export class ServiceRequestsService {
     }
 
     // Verify offering exists and is active
-    const offering = await this.prisma.offering.findUnique({
-      where: { id: dto.offeringId },
-    });
+    const { data: offering, error: offeringError } = await this.supabase.db
+      .from('offering')
+      .select('id, active')
+      .eq('id', dto.offeringId)
+      .single();
+
+    if (offeringError && offeringError.code !== 'PGRST116') {
+      throw new InternalServerErrorException(offeringError.message);
+    }
 
     if (!offering) {
       throw new NotFoundException(
@@ -157,17 +170,21 @@ export class ServiceRequestsService {
     }
 
     // Create the service request
-    const serviceRequest = await this.prisma.servicerequest.create({
-      data: {
+    const { data: serviceRequest, error: insertError } = await this.supabase.db
+      .from('servicerequest')
+      .insert({
         elderlyProfileId,
         offeringId: dto.offeringId,
         requestedDateTime: dto.requestedDateTime
-          ? new Date(dto.requestedDateTime)
+          ? new Date(dto.requestedDateTime).toISOString()
           : null,
         notes: dto.notes || null,
         status: ServiceRequestStatus.pending,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (insertError) throw new InternalServerErrorException(insertError.message);
 
     this.logger.log(`Service request created: ${serviceRequest.id}`);
 
@@ -185,10 +202,13 @@ export class ServiceRequestsService {
       `Fetching service requests for elderly profile: ${elderlyProfileId}`,
     );
 
-    const serviceRequests = await this.prisma.servicerequest.findMany({
-      where: { elderlyProfileId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { data: serviceRequests, error } = await this.supabase.db
+      .from('servicerequest')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .order('createdAt', { ascending: false });
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     return { items: serviceRequests };
   }
@@ -199,9 +219,13 @@ export class ServiceRequestsService {
   async cancel(id: string, elderlyProfileId: string) {
     this.logger.log(`Cancelling service request: ${id}`);
 
-    const serviceRequest = await this.prisma.servicerequest.findUnique({
-      where: { id },
-    });
+    const { data: serviceRequest, error } = await this.supabase.db
+      .from('servicerequest')
+      .select('id, elderlyProfileId, status')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw new InternalServerErrorException(error.message);
 
     if (!serviceRequest) {
       throw new NotFoundException(`Service request with id ${id} not found`);
@@ -219,10 +243,14 @@ export class ServiceRequestsService {
       );
     }
 
-    const updated = await this.prisma.servicerequest.update({
-      where: { id },
-      data: { status: ServiceRequestStatus.cancelled },
-    });
+    const { data: updated, error: updateError } = await this.supabase.db
+      .from('servicerequest')
+      .update({ status: ServiceRequestStatus.cancelled })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw new InternalServerErrorException(updateError.message);
 
     this.logger.log(`Service request cancelled: ${id}`);
 

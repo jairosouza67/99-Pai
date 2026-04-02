@@ -2,13 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CaregiverService } from '../caregiver/caregiver.service';
 import { CreateAgendaDto } from './dto/create-agenda.dto';
 import { UpdateAgendaDto } from './dto/update-agenda.dto';
-import { Role } from '@prisma/client';
+import { Role } from '../common/enums/role.enum';
 import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class AgendaService {
   private readonly logger = new Logger(AgendaService.name);
 
   constructor(
-    private prisma: PrismaService,
+    private supabase: SupabaseService,
     private caregiverService: CaregiverService,
   ) {}
 
@@ -34,20 +35,19 @@ export class AgendaService {
       throw new ForbiddenException('Access denied');
     }
 
-    const where: any = { elderlyProfileId };
+    let query = this.supabase.db
+      .from('agendaevent')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId);
 
-    if (from || to) {
-      where.dateTime = {};
-      if (from) where.dateTime.gte = new Date(from);
-      if (to) where.dateTime.lte = new Date(to);
-    }
+    if (from) query = query.gte('dateTime', new Date(from).toISOString());
+    if (to) query = query.lte('dateTime', new Date(to).toISOString());
 
-    const items = await this.prisma.agendaevent.findMany({
-      where,
-      orderBy: { dateTime: 'asc' },
-    });
+    const { data: items, error } = await query.order('dateTime', { ascending: true });
 
-    return { items };
+    if (error) throw new InternalServerErrorException(error.message);
+
+    return { items: items || [] };
   }
 
   async createAgenda(
@@ -63,14 +63,18 @@ export class AgendaService {
       throw new ForbiddenException('Access denied');
     }
 
-    const agenda = await this.prisma.agendaevent.create({
-      data: {
+    const { data: agenda, error } = await this.supabase.db
+      .from('agendaevent')
+      .insert({
         elderlyProfileId,
         description: createDto.description,
-        dateTime: new Date(createDto.dateTime),
+        dateTime: new Date(createDto.dateTime).toISOString(),
         reminder: createDto.reminder ?? true,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(
       `Agenda event created for elderly profile ${elderlyProfileId}: ${agenda.description}`,
@@ -93,25 +97,32 @@ export class AgendaService {
       throw new ForbiddenException('Access denied');
     }
 
-    const agenda = await this.prisma.agendaevent.findFirst({
-      where: { id: agendaId, elderlyProfileId },
-    });
+    const { data: agenda } = await this.supabase.db
+      .from('agendaevent')
+      .select('id')
+      .eq('id', agendaId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!agenda) {
       throw new NotFoundException('Agenda event not found');
     }
 
-    const data: any = {};
+    const data: Record<string, any> = {};
     if (updateDto.description !== undefined)
       data.description = updateDto.description;
     if (updateDto.dateTime !== undefined)
-      data.dateTime = new Date(updateDto.dateTime);
+      data.dateTime = new Date(updateDto.dateTime).toISOString();
     if (updateDto.reminder !== undefined) data.reminder = updateDto.reminder;
 
-    const updated = await this.prisma.agendaevent.update({
-      where: { id: agendaId },
-      data,
-    });
+    const { data: updated, error } = await this.supabase.db
+      .from('agendaevent')
+      .update(data)
+      .eq('id', agendaId)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Agenda event updated: ${agendaId}`);
 
@@ -131,15 +142,23 @@ export class AgendaService {
       throw new ForbiddenException('Access denied');
     }
 
-    const agenda = await this.prisma.agendaevent.findFirst({
-      where: { id: agendaId, elderlyProfileId },
-    });
+    const { data: agenda } = await this.supabase.db
+      .from('agendaevent')
+      .select('id')
+      .eq('id', agendaId)
+      .eq('elderlyProfileId', elderlyProfileId)
+      .single();
 
     if (!agenda) {
       throw new NotFoundException('Agenda event not found');
     }
 
-    await this.prisma.agendaevent.delete({ where: { id: agendaId } });
+    const { error } = await this.supabase.db
+      .from('agendaevent')
+      .delete()
+      .eq('id', agendaId);
+
+    if (error) throw new InternalServerErrorException(error.message);
 
     this.logger.log(`Agenda event deleted: ${agendaId}`);
 
@@ -147,29 +166,33 @@ export class AgendaService {
   }
 
   async getTodayAgenda(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { elderlyProfile: true },
-    });
+    const { data: user } = await this.supabase.db
+      .from('user')
+      .select('id, role, elderlyprofile!inner(id)')
+      .eq('id', userId)
+      .single();
 
-    if (!user || user.role !== Role.elderly || !user.elderlyProfile) {
+    if (!user || user.role !== Role.elderly || !user.elderlyprofile) {
       throw new ForbiddenException(
         'Only elderly users can access this endpoint',
       );
     }
 
-    const today = new Date();
-    const items = await this.prisma.agendaevent.findMany({
-      where: {
-        elderlyProfileId: user.elderlyProfile.id,
-        dateTime: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
-        },
-      },
-      orderBy: { dateTime: 'asc' },
-    });
+    const elderlyProfileId = Array.isArray(user.elderlyprofile)
+      ? user.elderlyprofile[0].id
+      : (user.elderlyprofile as any).id;
 
-    return { items };
+    const today = new Date();
+    const { data: items, error } = await this.supabase.db
+      .from('agendaevent')
+      .select('*')
+      .eq('elderlyProfileId', elderlyProfileId)
+      .gte('dateTime', startOfDay(today).toISOString())
+      .lte('dateTime', endOfDay(today).toISOString())
+      .order('dateTime', { ascending: true });
+
+    if (error) throw new InternalServerErrorException(error.message);
+
+    return { items: items || [] };
   }
 }
