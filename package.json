@@ -9,5 +9,8 @@
     "start:backend": "npm run start:dev --workspace=@99-pai/backend",
     "start:mobile": "npm run start --workspace=@99-pai/mobile",
     "build:backend": "npm run build --workspace=@99-pai/backend"
+  },
+  "dependencies": {
+    "iterare": "^1.2.1"
   }
 }

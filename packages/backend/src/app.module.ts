@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
+import { join } from 'path';
 import { SupabaseModule } from './supabase/supabase.module';
 import { AuthModule } from './auth/auth.module';
 import { ElderlyModule } from './elderly/elderly.module';
@@ -20,7 +21,10 @@ import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: join(__dirname, '../../../.env'),
+        }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     SupabaseModule,
     AuthModule,
