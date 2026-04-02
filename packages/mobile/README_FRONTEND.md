@@ -73,7 +73,7 @@ app/
 Login with any role:
 - **Role**: elderly | caregiver | provider | admin
 - **Email**: {role}@test.com
-- **Password**: password123
+- **Password**: 123456
 
 Token automatically stored and injected in all API calls.
 

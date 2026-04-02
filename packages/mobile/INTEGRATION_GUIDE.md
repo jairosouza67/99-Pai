@@ -81,22 +81,22 @@ eas build --platform android
 
 **Elderly User**:
 - Email: elderly@test.com
-- Password: password123
+- Password: 123456
 - Role: elderly
 
 **Caregiver User**:
 - Email: caregiver@test.com
-- Password: password123
+- Password: 123456
 - Role: caregiver
 
 **Provider User** (stub):
 - Email: provider@test.com
-- Password: password123
+- Password: 123456
 - Role: provider
 
 **Admin User** (stub):
 - Email: admin@test.com
-- Password: password123
+- Password: 123456
 - Role: admin
 
 ## API Integration Points

@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
+  ServiceUnavailableException,
   Logger,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
@@ -34,12 +35,16 @@ export class AuthService {
       birthday,
     } = signupDto;
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user exists
-    const { data: existingUser } = await this.supabase.db
+    const { data: existingUser, error: existingUserError } = await this.supabase.db
       .from('user')
       .select('id')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .single();
+
+    this.ensureSupabaseOk(existingUserError, 'signup:check-existing-user');
 
     if (existingUser) {
       throw new ConflictException('Email already registered');
@@ -65,7 +70,7 @@ export class AuthService {
     const { data: user, error } = await this.supabase.db
       .from('user')
       .insert({
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         name,
         role,
@@ -115,13 +120,16 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
+    const normalizedEmail = email.trim().toLowerCase();
 
     // Find user
-    const { data: user } = await this.supabase.db
+    const { data: user, error: userError } = await this.supabase.db
       .from('user')
       .select('*')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .single();
+
+    this.ensureSupabaseOk(userError, 'login:find-user');
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -154,11 +162,13 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    const { data: user } = await this.supabase.db
+    const { data: user, error: userError } = await this.supabase.db
       .from('user')
       .select('id, email, name, role, elderlyprofile(onboardingComplete)')
       .eq('id', userId)
       .single();
+
+    this.ensureSupabaseOk(userError, 'auth-me:find-user');
 
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -187,5 +197,19 @@ export class AuthService {
       code += chars.charAt(bytes[i] % chars.length);
     }
     return code;
+  }
+
+  private ensureSupabaseOk(error: any, context: string) {
+    if (!error) {
+      return;
+    }
+
+    // Supabase `.single()` returns PGRST116 when no rows are found.
+    if (error.code === 'PGRST116') {
+      return;
+    }
+
+    this.logger.error(`Supabase error (${context}): ${error.message}`);
+    throw new ServiceUnavailableException('Authentication service unavailable');
   }
 }

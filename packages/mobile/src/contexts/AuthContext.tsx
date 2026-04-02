@@ -83,9 +83,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       const response = await api.post('/auth/login', {
-        email,
+        email: normalizedEmail,
         password,
       });
       const token = response.data?.token as string;
@@ -107,9 +109,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     name: string,
     role: UserRole,
   ) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       const response = await api.post('/signup', {
-        email,
+        email: normalizedEmail,
         password,
         name,
         role,
