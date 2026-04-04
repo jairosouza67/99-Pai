@@ -1,7 +1,7 @@
 import {
   IsEmail,
   IsString,
-  IsEnum,
+  IsIn,
   MinLength,
   IsOptional,
   IsDateString,
@@ -23,10 +23,10 @@ export class SignupDto {
   name!: string;
 
   @ApiProperty({
-    enum: ['elderly', 'caregiver', 'provider', 'admin'],
+    enum: ['elderly', 'caregiver', 'provider'],
     example: 'elderly',
   })
-  @IsEnum(Role)
+  @IsIn([Role.elderly, Role.caregiver, Role.provider])
   role!: Role;
 
   @ApiPropertyOptional({ example: '+5511999999999' })

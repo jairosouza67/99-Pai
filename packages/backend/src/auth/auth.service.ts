@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  ForbiddenException,
   InternalServerErrorException,
   ServiceUnavailableException,
   Logger,
@@ -36,6 +37,17 @@ export class AuthService {
     } = signupDto;
 
     const normalizedEmail = email.trim().toLowerCase();
+
+    // Defense in depth: public signup must never create admin accounts.
+    const allowedSignupRoles = new Set<Role>([
+      Role.elderly,
+      Role.caregiver,
+      Role.provider,
+    ]);
+    if (!allowedSignupRoles.has(role)) {
+      this.logger.warn(`Blocked public signup with privileged role: ${role}`);
+      throw new ForbiddenException('This role cannot be created via public signup');
+    }
 
     // Check if user exists
     const { data: existingUser, error: existingUserError } = await this.supabase.db
@@ -96,7 +108,7 @@ export class AuthService {
 
       if (profileError) throw new InternalServerErrorException(profileError.message);
     }
-    // Note: caregiver, provider, and admin roles do NOT create elderlyprofile
+    // Note: caregiver and provider roles do NOT create elderlyprofile
 
     // Generate JWT token
     const token = this.jwtService.sign({

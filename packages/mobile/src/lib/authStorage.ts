@@ -1,20 +1,47 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { User } from '../types';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_USER_KEY = 'auth_user';
 
+const tokenStorage = {
+  async getItem(key: string) {
+    if (Platform.OS === 'web') {
+      return AsyncStorage.getItem(key);
+    }
+    return SecureStore.getItemAsync(key);
+  },
+
+  async setItem(key: string, value: string) {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.setItem(key, value);
+      return;
+    }
+    await SecureStore.setItemAsync(key, value);
+  },
+
+  async removeItem(key: string) {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.removeItem(key);
+      return;
+    }
+    await SecureStore.deleteItemAsync(key);
+  },
+};
+
 export const authStorage = {
   async getToken() {
-    return AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    return tokenStorage.getItem(AUTH_TOKEN_KEY);
   },
 
   async setToken(token: string) {
-    await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+    await tokenStorage.setItem(AUTH_TOKEN_KEY, token);
   },
 
   async removeToken() {
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    await tokenStorage.removeItem(AUTH_TOKEN_KEY);
   },
 
   async getUser() {

@@ -66,10 +66,6 @@ export default function AdminLoginScreen() {
           style={styles.button}
           disabled={isLoading}
         />
-
-        <Text style={styles.link} onPress={() => router.push('/auth/admin-signup')}>
-          Criar conta admin
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -100,12 +96,5 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: spacing.md,
-  },
-  link: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    textDecorationLine: 'underline',
   },
 });

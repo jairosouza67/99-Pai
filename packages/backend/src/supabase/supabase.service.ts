@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@99-pai/shared';
 
 @Injectable()
 export class SupabaseService {
-  private readonly client: SupabaseClient;
+  private readonly client: SupabaseClient<Database>;
 
   constructor() {
     const url = process.env.SUPABASE_URL;
@@ -13,12 +14,12 @@ export class SupabaseService {
       throw new Error('SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios');
     }
 
-    this.client = createClient(url, key, {
+    this.client = createClient<Database>(url, key, {
       auth: { persistSession: false },
     });
   }
 
-  get db(): SupabaseClient {
+  get db(): SupabaseClient<Database> {
     return this.client;
   }
 }

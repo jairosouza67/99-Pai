@@ -112,6 +112,21 @@ describe('Auth, Health & Public Endpoints (E2E)', () => {
    * Regardless of status code, the response correctly returns a JWT token and user info.
    */
   describe('Auth - Login', () => {
+    it('POST /api/signup with admin role → 400', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/signup')
+        .send({
+          email: `blocked-admin-${Date.now()}@test.com`,
+          password: '123456',
+          name: 'Blocked Admin',
+          role: 'admin',
+        })
+        .expect(400);
+
+      expect(response.body).toHaveProperty('message');
+      expect(JSON.stringify(response.body.message)).toContain('role');
+    });
+
     it('POST /api/auth/login with elderly@test.com → returns token', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/auth/login')
