@@ -40,6 +40,12 @@ supabase/.branches/
 # AI / Agents
 .gemini/
 .antigravity/
+.agent/
+.qoder/
+.venv/
+
+
+
 
 # OS files
 .DS_Store
