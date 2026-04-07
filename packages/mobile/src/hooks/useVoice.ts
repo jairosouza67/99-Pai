@@ -31,11 +31,17 @@ export const useVoice = () => {
 
   const speak = useCallback(async (text: string) => {
     try {
+      setError(null);
       setIsSpeaking(true);
       await VoiceService.speak(text);
-      setIsSpeaking(false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error speaking:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro ao reproduzir audio');
+      }
+    } finally {
       setIsSpeaking(false);
     }
   }, []);

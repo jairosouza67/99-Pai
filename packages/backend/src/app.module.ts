@@ -18,6 +18,7 @@ import { OfferingsModule } from './offerings/offerings.module';
 import { ServiceRequestsModule } from './service-requests/service-requests.module';
 import { RequestIdInterceptor } from './common/interceptors/request-id.interceptor';
 import { HealthModule } from './health/health.module';
+import { VoiceModule } from './voice/voice.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { HealthModule } from './health/health.module';
     OfferingsModule,
     ServiceRequestsModule,
     HealthModule,
+    VoiceModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

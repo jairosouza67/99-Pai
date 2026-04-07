@@ -1,7 +1,15 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
+
+const extraApiUrl =
+  typeof Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL === 'string'
+    ? Constants.expoConfig.extra.EXPO_PUBLIC_API_URL
+    : undefined;
 
 const rawBaseUrl =
-  process.env.EXPO_PUBLIC_API_URL?.trim() || 'http://localhost:3000';
+  process.env.EXPO_PUBLIC_API_URL?.trim() ||
+  extraApiUrl?.trim() ||
+  'http://localhost:3000';
 
 const normalizedBaseUrl = rawBaseUrl.replace(/\/$/, '');
 const apiBaseUrl = normalizedBaseUrl.endsWith('/api')
