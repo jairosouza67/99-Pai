@@ -1,15 +1,25 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 const extraApiUrl =
   typeof Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL === 'string'
-    ? Constants.expoConfig.extra.EXPO_PUBLIC_API_URL
+    ? Constants.expoConfig.extra.EXPO_PUBLIC_API_URL.trim()
     : undefined;
+
+const isWebLocalhost =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+const fallbackBaseUrl = isWebLocalhost
+  ? 'http://localhost:3000'
+  : 'https://99pai-api.vercel.app';
 
 const rawBaseUrl =
   process.env.EXPO_PUBLIC_API_URL?.trim() ||
-  extraApiUrl?.trim() ||
-  'http://localhost:3000';
+  (Platform.OS === 'web' ? undefined : extraApiUrl) ||
+  fallbackBaseUrl;
 
 const normalizedBaseUrl = rawBaseUrl.replace(/\/$/, '');
 const apiBaseUrl = normalizedBaseUrl.endsWith('/api')

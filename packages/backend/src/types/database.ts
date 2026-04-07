@@ -1,2 +1,1 @@
-// Fallback local para deploy isolado do backend na Vercel.
-export type Database = any;
+export type { Database } from '@99-pai/shared';
