@@ -4,8 +4,12 @@ export default function ElderlyLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerTitle: '',
+        headerBackTitleVisible: false,
       }}
-    />
+    >
+      <Stack.Screen name="home" options={{ headerShown: false }} />
+    </Stack>
   );
 }

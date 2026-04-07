@@ -4,8 +4,12 @@ export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerTitle: '',
+        headerBackTitleVisible: false,
       }}
-    />
+    >
+      <Stack.Screen name="role-select" options={{ headerShown: false }} />
+    </Stack>
   );
 }

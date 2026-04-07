@@ -67,7 +67,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "EXPO_PUBLIC_API_URL": "https://1af7ee006.na105.preview.abacusai.app/",
+      "EXPO_PUBLIC_API_URL": "http://localhost:3000",
       "router": {},
       "eas": {
         "projectId": "a52132e3-7b24-4c1b-9315-46625e580b8a"

@@ -4,8 +4,12 @@ export default function CaregiverLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerTitle: '',
+        headerBackTitleVisible: false,
       }}
-    />
+    >
+      <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+    </Stack>
   );
 }
