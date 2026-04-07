@@ -6,7 +6,7 @@ export default function ProviderLayout() {
       screenOptions={{
         headerShown: true,
         headerTitle: '',
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen name="dashboard" options={{ headerShown: false }} />

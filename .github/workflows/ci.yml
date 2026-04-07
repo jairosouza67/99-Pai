@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend
+        run: npm run build --workspace=@99-pai/backend
+
+      - name: Typecheck mobile
+        run: npm run typecheck --workspace=@99-pai/mobile
+
+      - name: Export mobile web
+        env:
+          CI: true
+          EXPO_PUBLIC_API_URL: https://example-api.invalid/api
+        run: npm run build:web --workspace=@99-pai/mobile

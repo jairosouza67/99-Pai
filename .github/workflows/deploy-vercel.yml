@@ -1,0 +1,147 @@
+name: Deploy Vercel
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  VERCEL_ORG_ID: team_WCJsbd8acPX7csHoGKmErD0j
+  VERCEL_PROJECT_ID_API: prj_77Gq6uZqfbUGQ96lHLufUTpBfFbj
+  VERCEL_PROJECT_ID_WEB: prj_FHC1C7ADCvKUcH0fxvSh5kUoe8Ms
+
+jobs:
+  deploy-api:
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment (preview)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/backend
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_API }}
+
+      - name: Pull Vercel environment (production)
+        if: ${{ github.event_name == 'push' }}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/backend
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_API }}
+
+      - name: Build API deployment
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/backend
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_API }}
+
+      - name: Deploy API preview
+        if: ${{ github.event_name == 'pull_request' }}
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/backend
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_API }}
+
+      - name: Deploy API production
+        if: ${{ github.event_name == 'push' }}
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/backend
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_API }}
+
+      - name: Smoke test API production
+        if: ${{ github.event_name == 'push' }}
+        run: curl -fsS https://99pai-api.vercel.app/api/health > /dev/null
+
+  deploy-web:
+    if: ${{ secrets.VERCEL_TOKEN != '' && secrets.EXPO_PUBLIC_API_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment (preview)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/mobile
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_WEB }}
+
+      - name: Pull Vercel environment (production)
+        if: ${{ github.event_name == 'push' }}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/mobile
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_WEB }}
+
+      - name: Build web static output
+        env:
+          CI: true
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+        run: npm run build:web
+        working-directory: ./packages/mobile
+
+      - name: Prepare Vercel prebuilt output
+        run: npm run prepare:vercel-prebuilt
+        working-directory: ./packages/mobile
+
+      - name: Deploy web preview
+        if: ${{ github.event_name == 'pull_request' }}
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/mobile
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_WEB }}
+
+      - name: Deploy web production
+        if: ${{ github.event_name == 'push' }}
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./packages/mobile
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID_WEB }}
+
+      - name: Smoke test web production
+        if: ${{ github.event_name == 'push' }}
+        run: curl -fsS https://99pai-web.vercel.app > /dev/null
+
+      - name: Smoke test web to api integration
+        if: ${{ github.event_name == 'push' }}
+        run: curl -fsS https://99pai-api.vercel.app/api/health > /dev/null

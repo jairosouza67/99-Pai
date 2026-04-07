@@ -6,7 +6,7 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: true,
         headerTitle: '',
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen name="role-select" options={{ headerShown: false }} />
