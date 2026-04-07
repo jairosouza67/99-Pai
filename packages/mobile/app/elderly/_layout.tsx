@@ -6,7 +6,7 @@ export default function ElderlyLayout() {
       screenOptions={{
         headerShown: true,
         headerTitle: '',
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen name="home" options={{ headerShown: false }} />
