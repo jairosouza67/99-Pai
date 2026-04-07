@@ -101,9 +101,11 @@ Observação: orgId e projectIds foram definidos diretamente no workflow [.githu
 - O export web pode emitir aviso sobre android.googleServicesFile e ios.googleServicesFile quando esses arquivos não existem no ambiente de build web. Atualmente isso é warning e não bloqueia o build.
 - O builder remoto da Vercel para npm run build:web falhou de forma intermitente sem log detalhado suficiente; por estabilidade o fluxo oficial ficou em prebuilt até investigação dedicada.
 - Plano de investigação: [Docs/deployment/WEB_REMOTE_BUILDER_INVESTIGATION.md](Docs/deployment/WEB_REMOTE_BUILDER_INVESTIGATION.md).
+- Deploys automáticos diretos por Git na Vercel foram desativados via [packages/mobile/vercel.json](packages/mobile/vercel.json) e [packages/backend/vercel.json](packages/backend/vercel.json) para evitar overwrite de alias com deployment inconsistente apos push.
 
 ## Log de modificações
 
 - 2026-04-06: iniciado setup Vercel com handler serverless para backend, export web no mobile e workflows de CI/CD.
 - 2026-04-06: criados projetos 99pai-api e 99pai-web na Vercel e credenciais (org/project IDs) atualizadas no workflow de deploy.
 - 2026-04-06: deploy web estabilizado com fluxo prebuilt e smoke tests automáticos de produção adicionados ao workflow.
+- 2026-04-07: incidente pos-push (site 404) mitigado com redeploy manual prebuilt e bloqueio de deploy automatico Git direto na Vercel.
