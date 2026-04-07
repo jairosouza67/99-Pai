@@ -1,0 +1,3 @@
+// Temporary compatibility type to keep monorepo builds working while
+// regenerated Supabase typed schemas are restored.
+export type Database = any;

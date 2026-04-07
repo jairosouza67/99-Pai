@@ -1,0 +1,77 @@
+# Sistema de Voice TTS com OpenAI, Fallback Gemini e Cache no Supabase
+
+Implementação de um sistema de Texto-para-Voz (TTS) natural e de baixa latência focado no público idoso, substituindo a voz robótica nativa do dispositivo.
+
+## User Review Required
+
+> [!IMPORTANT]  
+> **Aprovação de Custos e APIs:** Esta alteração exigirá chaves de API da **OpenAI** e do **Google Cloud (ou Gemini)**. Além disso, criaremos um novo bucket no Supabase Storage (`tts-cache`). O cache será público para simplificar o consumo do áudio no mobile via URL. Gostaria de confirmar se está de acordo com a criação do bucket público e o formato da integração.
+
+## Proposed Changes
+
+### Arquitetura de Áudio (Backend)
+
+Vamos criar um endpoint HTTP `GET /api/voice/tts?text=<texto>`:
+
+1. **Hash do Texto:** O backend gera um hash MD5 ou SHA-256 do texto para usar como ID único (ex: `hash.mp3`).
+2. **Verificação de Cache:** Verifica se o arquivo existe no bucket `tts-cache` do Supabase.
+   - **Encontrou (Cache Hit):** Faz um redirecionamento HTTP `302` para a URL pública do Supabase Storage. O app tocará direto do Supabase.
+   - **Não Encontrou (Cache Miss):** 
+     - Chama a API da **OpenAI TTS**.
+     - Inicia a transferência do stream (`audio/mpeg`) da OpenAI direto para a resposta do cliente (Stream real-time para tocar imediatamente).
+     - **Em background**, captura o stream, monta o buffer do arquivo e faz o upload para o bucket `tts-cache` no Supabase Storage.
+     - Se a OpenAI falhar, cai para o **Google Cloud Text-to-Speech (Gemini proxy)** usando a mesma lógica de stream e upload background.
+
+---
+
+### Backend (NestJS)
+
+#### [NEW] `packages/backend/src/voice/voice.module.ts`
+Módulo responsável por agregar os novos serviços de TTS.
+
+#### [NEW] `packages/backend/src/voice/voice.service.ts`
+Implementar a lógica de orquestração: verificar Supabase -> tentar OpenAI -> tentar Google Cloud -> salvar buffer no Supabase (background action).
+
+#### [NEW] `packages/backend/src/voice/voice.controller.ts`
+Implementar o endpoint `GET /api/voice/tts?text=...`, permitindo redirecionamentos (HTTP 302) HTTP e retorno streaming (HTTP 200).
+
+#### [MODIFY] `packages/backend/package.json`
+Adicionar `openai`, `@google-cloud/text-to-speech` e dependências para crypto (se necessário, embora o native Node.js já sirva).
+
+---
+
+### Database / Supabase
+
+#### [NEW] `supabase/migrations/0005_tts_storage_bucket.sql`
+Criará o bucket `tts-cache` publicamente acessível para hospedar os áudios pré-renderizados, com configuração adequada (permissões limitadas apenas para leitura pública; escrita apenas para Service Role).
+
+---
+
+### Mobile (Expo)
+
+#### [MODIFY] `packages/mobile/package.json`
+Vamos instalar `expo-av` se não estiver presente (para a reprodução de mídias em URL e streaming HTTP), pois apenas `expo-speech` não lida bem com URLs remotas MP3.
+
+#### [MODIFY] `packages/mobile/src/services/voice.ts` & `packages/mobile/src/hooks/useVoice.ts`
+Em vez de utilizar o `expo-speech`, a função `speak(text)` invocará a classe `Audio.Sound.createAsync` do `expo-av`, passando nossa URL da API Backend (`<app-url>/api/voice/tts?text=uri-encoded-text`).
+
+Com isso:
+- Na 1ª vez: O app começa a tocar assim que o backend liberar os primeiros bytes do stream da OpenAI.
+- Nas vezes seguintes: O backend direcionará o `expo-av` para o arquivo rápido e salvo no Supabase (latência zero de AI).
+
+## Open Questions
+
+> [!WARNING]  
+> 1. Para o Fallback com o Google, você prefere setar a variável de ambiente **`GOOGLE_APPLICATION_CREDENTIALS`** com o arquivo JSON da conta de serviço (ideal para bibliotecas @google-cloud) ou utilizar a nova API Rest do **Gemini** (apenas API KEY, se acessível TTS por lá)? O Google Cloud TTS é super estável e fácil via SDK. Recomendarei usar o path do arquivo JSON da service account ou exportar a string JSON como env vars. Vamos combinar isso.
+> 2. Podemos seguir usando a porta do Backend pra servir essas interações?
+
+## Verification Plan
+
+### Automated Tests
+- Testar a integridade das chamadas da OpenAI.
+- Testar a gravação transparente no Supabase de uma simulação da API.
+
+### Manual Verification
+1. Fazer o app ler uma mensagem inédita e logar "Gerado pela OpenAI" + "Gravado no Supabase".
+2. Acionar a mesma mensagem mais uma vez e ver no terminal se foi devolvido Via Cache (`302 redirect`).
+3. Forçar um erro na API da OpenAI (por exemplo tirando um caracter da key mock) e ver a leitura saindo usando o Fallback do Google Cloud.

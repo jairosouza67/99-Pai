@@ -1,11 +1,53 @@
-node_modules
-# Keep environment variables out of version control
+# node_modules dependencies
+node_modules/
+
+# environments
 .env
-
-# Additional local/runtime artifacts
-dist/
-.env.local
 .env.*.local
-*.log
+.env.local
 
-/generated/prisma
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# builds
+dist/
+build/
+packages/*/dist/
+.next/
+out/
+coverage/
+
+# Expo / React Native
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+GoogleService-Info.plist
+ios/
+android/
+
+# Supabase Local
+supabase/.temp/
+supabase/.branches/
+
+# AI / Agents
+.gemini/
+.antigravity/
+.agent/
+.qoder/
+.venv/
+
+
+
+
+# OS files
+.DS_Store
+Thumbs.db
+
