@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@99-pai/shared": "*",
+    "@99-pai/shared": "file:../shared",
     "@google-cloud/text-to-speech": "^6.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
