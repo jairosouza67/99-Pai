@@ -8,7 +8,8 @@
   "scripts": {
     "start:backend": "npm run start:dev --workspace=@99-pai/backend",
     "start:mobile": "npm run start --workspace=@99-pai/mobile",
-    "build:backend": "npm run build --workspace=@99-pai/backend"
+    "build:backend": "npm run build --workspace=@99-pai/backend",
+    "build:web": "npm run build:web --workspace=@99-pai/mobile"
   },
   "dependencies": {
     "iterare": "^1.2.1"
