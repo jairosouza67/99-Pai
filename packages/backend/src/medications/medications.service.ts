@@ -290,6 +290,7 @@ export class MedicationsService {
     }
     
     if (histError) throw new InternalServerErrorException(histError.message);
+    if (!history) throw new InternalServerErrorException('Failed to save medication history');
 
     this.logger.log(
       `Medication ${confirmDto.confirmed ? 'confirmed' : 'marked as missed'}: ${medicationId}`,

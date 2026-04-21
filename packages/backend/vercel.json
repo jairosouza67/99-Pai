@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "api/[...all].ts"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/health",
+      "schedule": "0 3 */5 * *"
+    }
   ]
 }
