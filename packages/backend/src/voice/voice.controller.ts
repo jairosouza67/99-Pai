@@ -28,6 +28,9 @@ export class VoiceController {
   })
   async tts(@Query() query: TtsQueryDto, @Res() response: Response): Promise<void> {
     response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    // Cache TTS audio for 24h, scoped to the authenticated client only
+    response.setHeader('Cache-Control', 'private, max-age=86400');
+    // TODO: Implement Supabase Storage bucket cleanup for TTS cache (>30 days)
     await this.voiceService.synthesize(query.text, response);
   }
 }

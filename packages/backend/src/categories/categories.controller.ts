@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -29,6 +30,8 @@ import { Role } from '../common/enums/role.enum';
 
 @ApiTags('Categories')
 @Controller('categories')
+// @Public — Intentional: non-sensitive service category data. Rate-limited to 30 req/min.
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

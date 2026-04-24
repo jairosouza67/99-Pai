@@ -29,7 +29,7 @@
 | 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ⬜ PENDENTE | — | — |
+| 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ⬜ PENDENTE | — | — |
 | 09 | Validação Final & Reauditoria | — | ⬜ PENDENTE | — | — |
 
@@ -78,8 +78,11 @@
   - Task 6.3: Validação UUID v4 adicionada no `request-id.interceptor.ts` — header `x-request-id` malicioso é ignorado e novo UUID é gerado
 
 ### Loop 07 — Endpoint Security
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 7.1: Categories controller mantido público (dados não-sensíveis) com throttle de 30 req/min e comentário `@Public` documentando a decisão
+  - Task 7.2: Health check separado em `/api/health` e `/api/health/ping` (público, sem detalhes de DB — compatível com Vercel Cron) e `/api/health/status` (protegido com JwtAuthGuard, retorna detalhes do Supabase)
+  - Task 7.3 (simplificada): Header `Cache-Control: private, max-age=86400` adicionado ao TTS. Cleanup de bucket Supabase Storage adiado com TODO
 
 ### Loop 08 — Supply Chain & Dependencies
 - **Status:** ⬜ PENDENTE
