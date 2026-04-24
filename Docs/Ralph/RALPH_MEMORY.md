@@ -25,7 +25,7 @@
 |------|------|-----------|--------|-------------|----------|
 | 01 | Quick Wins Críticos (C3, M4, M7) | 🔴🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ⬜ PENDENTE | — | — |
+| 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ✅ CONCLUÍDO (parcial — tasks automatizáveis) | 2026-04-24 | 2026-04-24 |
 | 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ⬜ PENDENTE | — | — |
 | 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ⬜ PENDENTE | — | — |
@@ -52,8 +52,12 @@
   - Task 2.3: Brute force protection no login via @Throttle(5 req/min) em auth.controller.ts
 
 ### Loop 03 — Secrets & Env Security
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ⚠️ PARCIAL
+- **Notas:**
+  - Task 3.1: `.env` raiz nunca foi commitado. Arquivo `.env.production` foi commitado no histórico (commit 86129a2) com VERCEL_OIDC_TOKEN — requer rotação.
+  - Task 3.3: Todos os endpoints sensíveis possuem `@UseGuards(JwtAuthGuard)`. Comentário de segurança adicionado ao `supabase.service.ts`.
+  - Task 3.4: `envFilePath` em `app.module.ts` corrigido para não carregar `.env` em produção.
+  - Task 3.2 (rotação manual de chaves Supabase/API keys) pendente — requer ação manual no dashboard
 
 ### Loop 04 — JWT & Refresh Token
 - **Status:** ⬜ PENDENTE
@@ -87,6 +91,7 @@
 
 | Data | Loop | Decisão | Motivo |
 |------|------|---------|--------|
+| 2026-04-24 | 03 | Task 3.2 adiada | Rotação de chaves requer acesso manual ao Supabase Dashboard e Vercel. Será feita separadamente. |
 | 2026-04-24 | 04 | Adiado pós-MVP | Complexidade alta (~4-6h), requer mudanças no mobile. Não bloqueia outros loops. |
 
 ---

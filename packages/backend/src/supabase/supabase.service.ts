@@ -1,3 +1,6 @@
+// SECURITY NOTE: This service uses SERVICE_ROLE_KEY (admin privileges).
+// All endpoints using this service MUST be protected with @UseGuards(JwtAuthGuard).
+// Backend is the trust boundary — never expose SERVICE_ROLE_KEY to client.
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';

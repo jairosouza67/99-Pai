@@ -24,7 +24,9 @@ import { VoiceModule } from './voice/voice.module';
   imports: [
     ConfigModule.forRoot({
           isGlobal: true,
-          envFilePath: join(__dirname, '../../../.env'),
+          envFilePath: process.env.NODE_ENV === 'production'
+            ? undefined
+            : join(__dirname, '../../../.env'),
         }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     SupabaseModule,

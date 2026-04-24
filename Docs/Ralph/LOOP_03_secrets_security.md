@@ -33,10 +33,10 @@
 3. Se não retornar resultados: as chaves estão seguras (mas devem ser rotacionadas por precaução)
 
 **Ação manual do usuário:**
-- [ ] Verificar se `.env` aparece no histórico git
-- [ ] Se sim: rotacionar TODAS as chaves
+- [x] Verificar se `.env` aparece no histórico git — `.env` raiz nunca foi commitado
+- [x] `.env.production` foi commitado no histórico (commit 86129a2) com VERCEL_OIDC_TOKEN — requer rotação
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
@@ -70,6 +70,8 @@ curl https://99pai-api.vercel.app/api/health
 ```
 
 - [ ] Concluído
+
+**Nota:** Task adiada — rotação manual requer acesso ao Supabase Dashboard e Vercel.
 
 ---
 
@@ -112,7 +114,7 @@ curl https://99pai-api.vercel.app/api/health
 - Build sem erros
 - Todos os endpoints protegidos funcionam normalmente
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
@@ -138,7 +140,7 @@ curl https://99pai-api.vercel.app/api/health
 - Servidor local funciona normalmente
 - Deploy no Vercel funciona normalmente
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
