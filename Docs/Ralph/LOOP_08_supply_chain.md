@@ -25,7 +25,7 @@ npm audit fix
 - Se `audit fix` não resolver: avaliar `--force` ou atualizar dependências manualmente
 - Documentar vulnerabilidades que não podem ser corrigidas (transitive deps)
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 8.2 — Verificar NODE_ENV no Vercel (L1)
 **Problema:** Swagger docs protegidos com `process.env.NODE_ENV !== 'production'`.
@@ -35,7 +35,7 @@ npm audit fix
 2. Acessar `https://99pai-api.vercel.app/api/docs` — deve retornar 404 em produção
 3. Se Swagger estiver acessível: corrigir a variável
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 8.3 — Auditar dependências do mobile
 ```bash
@@ -45,12 +45,12 @@ npm audit
 ```
 - Verificar se há dependências com CVEs conhecidos
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
 ## 🔄 Pós-Loop
-1. [ ] `npm audit` retorna 0 vulnerabilidades high/critical
-2. [ ] Swagger inacessível em produção
-3. [ ] Atualizar `RALPH_MEMORY.md` → Loop 08 → ✅ CONCLUÍDO
-4. [ ] Commit: `fix(security): loop-08 dependency audit, env verification`
+1. [x] `npm audit` retorna 0 vulnerabilidades high/critical
+2. [x] Swagger inacessível em produção
+3. [x] Atualizar `RALPH_MEMORY.md` → Loop 08 → ✅ CONCLUÍDO
+4. [x] Commit: `fix(security): loop-08 dependency audit, env verification`

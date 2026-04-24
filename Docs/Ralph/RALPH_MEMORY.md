@@ -30,7 +30,7 @@
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ⬜ PENDENTE | — | — |
+| 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 09 | Validação Final & Reauditoria | — | ⬜ PENDENTE | — | — |
 
 ---
@@ -85,8 +85,11 @@
   - Task 7.3 (simplificada): Header `Cache-Control: private, max-age=86400` adicionado ao TTS. Cleanup de bucket Supabase Storage adiado com TODO
 
 ### Loop 08 — Supply Chain & Dependencies
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 8.1 (Backend audit): 14 vulnerabilidades → 6 restantes após `npm audit fix`. 8 resolvidas (lodash, path-to-regexp, js-yaml, protobufjs, @xmldom/xmldom, axios, follow-redirects). 6 pendentes são transitivas via `@nestjs/cli` → `@angular-devkit` (ajv GHSA-2g4f-4pwh-qvx6, picomatch GHSA-3v7f-55p6-f55p/GHSA-c2c7-rcm5-vvqj) — requer upgrade do @nestjs/cli para resolver.
+  - Task 8.2 (Swagger/production): Confirmado que `bootstrap-config.ts` já protege Swagger com `if (process.env.NODE_ENV !== 'production')` (linha 72). Nenhuma alteração necessária.
+  - Task 8.3 (Mobile audit): 29 vulnerabilidades → 26 restantes após `npm audit fix`. 3 resolvidas (axios, follow-redirects, @xmldom/xmldom). 26 pendentes são transitivas via Expo ecosystem (xmldom, uuid, xml2js, @tootallnate/once, picomatch) — exigiriam `--force` com breaking changes.
 
 ### Loop 09 — Validação Final & Reauditoria
 - **Status:** ⬜ PENDENTE
