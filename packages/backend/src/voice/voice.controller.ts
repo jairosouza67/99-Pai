@@ -27,6 +27,7 @@ export class VoiceController {
     description: 'Cache miss: retorna stream de áudio MP3',
   })
   async tts(@Query() query: TtsQueryDto, @Res() response: Response): Promise<void> {
+    response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     await this.voiceService.synthesize(query.text, response);
   }
 }

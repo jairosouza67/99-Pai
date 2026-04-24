@@ -27,7 +27,7 @@
 | 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ✅ CONCLUÍDO (parcial — tasks automatizáveis) | 2026-04-24 | 2026-04-24 |
 | 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
-| 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ⬜ PENDENTE | — | — |
+| 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ⬜ PENDENTE | — | — |
 | 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ⬜ PENDENTE | — | — |
 | 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ⬜ PENDENTE | — | — |
@@ -64,8 +64,11 @@
 - **Notas:** —
 
 ### Loop 05 — CORS & Headers Hardening
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 5.1: Bloqueados requests sem origin em produção — `if (!origin && NODE_ENV==='production')` retorna erro CORS
+  - Task 5.2: Regex de preview deployments restrita de `[a-z0-9-]+` para `[a-z0-9-]{1,30}` (limite de comprimento)
+  - Task 5.3: `crossOriginResourcePolicy` alterado de `cross-origin` para `same-origin` globalmente; override `cross-origin` adicionado no VoiceController (rota TTS)
 
 ### Loop 06 — Logging, Observability & Type Safety
 - **Status:** ⬜ PENDENTE

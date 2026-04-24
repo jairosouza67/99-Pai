@@ -31,12 +31,17 @@ export function configureNestApp(app: INestApplication): void {
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) {
+        // Em produção, bloquear requests sem origin. Em dev, permitir (Postman, cURL)
+        if (process.env.NODE_ENV === 'production') {
+          callback(new Error('CORS: origin required in production'), false);
+          return;
+        }
         callback(null, true);
         return;
       }
 
       const normalizedOrigin = origin.trim().replace(/\/$/, '');
-      const isWebPreview = /^https:\/\/99pai-[a-z0-9-]+-jairosouza67-5313s-projects\.vercel\.app$/.test(
+      const isWebPreview = /^https:\/\/99pai-[a-z0-9-]{1,30}-jairosouza67-5313s-projects\.vercel\.app$/.test(
         normalizedOrigin,
       );
 
@@ -60,7 +65,7 @@ export function configureNestApp(app: INestApplication): void {
 
   app.use(
     helmet({
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginResourcePolicy: { policy: 'same-origin' },
     }),
   );
 

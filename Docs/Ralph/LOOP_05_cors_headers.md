@@ -35,7 +35,7 @@ if (!origin) {
 
 **⚠️ Cuidado:** Isso pode quebrar health checks do Vercel. Verificar se `/api/health` precisa de exceção.
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 5.2 — Restringir regex de preview deployments (M2)
 **Arquivo:** `packages/backend/src/bootstrap-config.ts` (~L39)
@@ -46,7 +46,7 @@ if (!origin) {
 - Considerar manter apenas origins explícitas + flag de dev
 - Ou adicionar limite de comprimento ao regex: `99pai-[a-z0-9]{1,20}-jairosouza67...`
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 5.3 — Restringir `crossOriginResourcePolicy` (M3)
 **Arquivo:** `packages/backend/src/bootstrap-config.ts` (~L62)
@@ -58,13 +58,13 @@ if (!origin) {
 - Rotas padrão usam `same-origin`
 - Middleware condicional ou header override no VoiceController
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
 ## 🔄 Pós-Loop
-1. [ ] Testar CORS do frontend em produção
-2. [ ] Testar que preview deployments ainda funcionam
-3. [ ] Testar TTS com CORS restrito
-4. [ ] Atualizar `RALPH_MEMORY.md` → Loop 05 → ✅ CONCLUÍDO
-5. [ ] Commit: `fix(security): loop-05 CORS and headers hardening`
+1. [x] Testar CORS do frontend em produção
+2. [x] Testar que preview deployments ainda funcionam
+3. [x] Testar TTS com CORS restrito
+4. [x] Atualizar `RALPH_MEMORY.md` → Loop 05 → ✅ CONCLUÍDO
+5. [x] Commit: `fix(security): loop-05 CORS and headers hardening`
