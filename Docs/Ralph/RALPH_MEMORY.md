@@ -24,7 +24,7 @@
 | Loop | Task | Severidade | Status | Data Início | Data Fim |
 |------|------|-----------|--------|-------------|----------|
 | 01 | Quick Wins Críticos (C3, M4, M7) | 🔴🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ⬜ PENDENTE | — | — |
+| 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ⬜ PENDENTE | — | — |
 | 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ⬜ PENDENTE | — | — |
@@ -45,8 +45,11 @@
   - Task 1.3: Removido nestjs-core-11.0.1.tgz da raiz e adicionado *.tgz ao .gitignore
 
 ### Loop 02 — Hardening de Autenticação
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 2.1: bcrypt cost factor aumentado de 10 para 12 em auth.service.ts (OWASP 2025)
+  - Task 2.2: Password policy fortalecida em signup.dto.ts — @MinLength(8) + regex (maiúscula, minúscula, número)
+  - Task 2.3: Brute force protection no login via @Throttle(5 req/min) em auth.controller.ts
 
 ### Loop 03 — Secrets & Env Security
 - **Status:** ⬜ PENDENTE
@@ -84,7 +87,7 @@
 
 | Data | Loop | Decisão | Motivo |
 |------|------|---------|--------|
-| — | — | — | — |
+| 2026-04-24 | 04 | Adiado pós-MVP | Complexidade alta (~4-6h), requer mudanças no mobile. Não bloqueia outros loops. |
 
 ---
 

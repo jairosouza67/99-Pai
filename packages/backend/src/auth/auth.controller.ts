@@ -5,6 +5,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -24,6 +25,7 @@ export class AuthController {
     return this.authService.signup(signupDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('auth/login')
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Successfully logged in' })

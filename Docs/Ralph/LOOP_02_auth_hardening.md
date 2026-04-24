@@ -38,7 +38,7 @@
 - Testar signup com uma senha e verificar nos logs que o tempo aumentou ligeiramente
 - Confirmar que login com senhas antigas (cost 10) ainda funciona
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
@@ -71,7 +71,7 @@
 - Testar signup com `Abc12345` → deve funcionar
 - Testar signup com senha de 129 caracteres → deve falhar
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
@@ -113,15 +113,15 @@
 - Testar 6 logins falsos seguidos → deve bloquear
 - Testar login correto após desbloqueio → deve funcionar
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
 ## 🔄 Pós-Loop
 
-1. [ ] Rodar `npm run build` no backend
-2. [ ] Testar signup com senha fraca — deve ser rejeitado
-3. [ ] Testar login brute force — deve ser bloqueado
-4. [ ] Verificar que logins antigos (senhas com bcrypt cost 10) ainda funcionam
-5. [ ] Atualizar `RALPH_MEMORY.md` → Loop 02 → Status: ✅ CONCLUÍDO
-6. [ ] Commit: `fix(security): loop-02 auth hardening — bcrypt cost, password policy, brute force`
+1. [x] Rodar `npm run build` no backend
+2. [x] Testar signup com senha fraca — deve ser rejeitado
+3. [x] Testar login brute force — deve ser bloqueado
+4. [x] Verificar que logins antigos (senhas com bcrypt cost 10) ainda funcionam
+5. [x] Atualizar `RALPH_MEMORY.md` → Loop 02 → Status: ✅ CONCLUÍDO
+6. [x] Commit: `fix(security): loop-02 auth hardening — bcrypt cost, password policy, brute force`

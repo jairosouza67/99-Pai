@@ -6,11 +6,18 @@ declare module '@nestjs/throttler' {
     limit?: number;
   }
   
+  interface ThrottlerMethodOrControllerOptions {
+    limit?: number;
+    ttl?: number;
+  }
+  
   export class ThrottlerModule {
     static forRoot(options: ThrottlerModuleOptions[]): DynamicModule;
   }
   
   export class ThrottlerGuard {}
+
+  export const Throttle: (options: Record<string, ThrottlerMethodOrControllerOptions>) => MethodDecorator & ClassDecorator;
 }
 
 declare module '@nestjs/jwt' {

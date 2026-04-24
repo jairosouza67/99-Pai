@@ -75,8 +75,9 @@ export class AuthService {
       }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password — OWASP 2025 recommends cost ≥ 12
+    const BCRYPT_COST = 12;
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_COST);
 
     // Create user with optional PAI fields
     const { data: user, error } = await this.supabase.db
