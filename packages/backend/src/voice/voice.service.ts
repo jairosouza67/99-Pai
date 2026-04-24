@@ -4,13 +4,17 @@ import type { Response } from 'express';
 import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech';
 import { SupabaseService } from '../supabase/supabase.service';
 
-type TtsProvider = 'openai' | 'google';
+type TtsProvider = 'openrouter' | 'openai' | 'google';
 
 @Injectable()
 export class VoiceService {
   private readonly logger = new Logger(VoiceService.name);
   private readonly bucketName = process.env.TTS_BUCKET ?? 'tts-cache';
+
+  private readonly openRouterEndpoint =
+    `${process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1'}/tts`;
   private readonly openAiSpeechEndpoint = 'https://api.openai.com/v1/audio/speech';
+
   private readonly googleClient: TextToSpeechClient | null;
 
   constructor(private readonly supabase: SupabaseService) {
@@ -30,26 +34,59 @@ export class VoiceService {
 
     this.logger.log(`TTS cache miss: ${filePath}`);
 
-    try {
-      const buffer = await this.streamFromOpenAi(text, response);
-      this.persistCacheInBackground(filePath, buffer, 'openai');
-      return;
-    } catch (error) {
-      if (response.headersSent) {
-        this.logger.error(
-          `Falha durante stream OpenAI apos envio da resposta: ${this.toErrorMessage(error)}`,
-        );
-        if (!response.writableEnded) {
-          response.end();
-        }
+    // Layer 1: OpenRouter (primary)
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterKey) {
+      try {
+        const buffer = await this.callTtsEndpoint({
+          endpoint: this.openRouterEndpoint,
+          apiKey: openRouterKey,
+          model: process.env.OPENROUTER_TTS_MODEL ?? 'openai/gpt-4o-mini-tts-2025-12-15',
+          voice: process.env.OPENROUTER_TTS_VOICE ?? 'coral',
+          speed: Number(process.env.OPENROUTER_TTS_SPEED ?? '0.95'),
+          text,
+          response,
+        });
+        this.persistCacheInBackground(filePath, buffer, 'openrouter');
         return;
+      } catch (error) {
+        if (response.headersSent) {
+          this.handlePartialStreamError(error, response, 'openrouter');
+          return;
+        }
+        this.logger.warn(
+          `OpenRouter indisponivel, tentando OpenAI direto: ${this.toErrorMessage(error)}`,
+        );
       }
-
-      this.logger.warn(
-        `OpenAI indisponivel, iniciando fallback Google TTS: ${this.toErrorMessage(error)}`,
-      );
     }
 
+    // Layer 2: OpenAI Direct (secondary fallback)
+    const openAiKey = process.env.OPENAI_API_KEY;
+    if (openAiKey) {
+      try {
+        const buffer = await this.callTtsEndpoint({
+          endpoint: this.openAiSpeechEndpoint,
+          apiKey: openAiKey,
+          model: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
+          voice: process.env.OPENAI_TTS_VOICE ?? 'alloy',
+          speed: Number(process.env.OPENAI_TTS_SPEED ?? '0.95'),
+          text,
+          response,
+        });
+        this.persistCacheInBackground(filePath, buffer, 'openai');
+        return;
+      } catch (error) {
+        if (response.headersSent) {
+          this.handlePartialStreamError(error, response, 'openai');
+          return;
+        }
+        this.logger.warn(
+          `OpenAI direto indisponivel, tentando Google TTS: ${this.toErrorMessage(error)}`,
+        );
+      }
+    }
+
+    // Layer 3: Google Cloud TTS (last resort)
     try {
       const buffer = await this.generateWithGoogle(text);
       response.status(200);
@@ -67,38 +104,41 @@ export class VoiceService {
     }
   }
 
-  private async streamFromOpenAi(text: string, response: Response): Promise<Buffer> {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY nao configurada');
-    }
+  private async callTtsEndpoint(params: {
+    endpoint: string;
+    apiKey: string;
+    model: string;
+    voice: string;
+    speed: number;
+    text: string;
+    response: Response;
+  }): Promise<Buffer> {
+    const { endpoint, apiKey, model, voice, speed, text, response } = params;
 
-    const requestPayload = {
-      model: process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts',
-      voice: process.env.OPENAI_TTS_VOICE ?? 'alloy',
-      response_format: 'mp3',
-      speed: Number(process.env.OPENAI_TTS_SPEED ?? '0.95'),
-      input: text,
-    };
-
-    const upstream = await fetch(this.openAiSpeechEndpoint, {
+    const upstream = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestPayload),
+      body: JSON.stringify({
+        model,
+        voice,
+        speed,
+        input: text,
+        response_format: 'mp3',
+      }),
     });
 
     if (!upstream.ok) {
       const body = await upstream.text();
       throw new Error(
-        `OpenAI retornou ${upstream.status}: ${body.slice(0, 300) || 'sem detalhes'}`,
+        `TTS retornou ${upstream.status}: ${body.slice(0, 300) || 'sem detalhes'}`,
       );
     }
 
     if (!upstream.body) {
-      throw new Error('OpenAI retornou stream vazio');
+      throw new Error('TTS retornou stream vazio');
     }
 
     response.status(200);
@@ -195,6 +235,19 @@ export class VoiceService {
           `Falha ao salvar audio TTS em cache (${provider}): ${this.toErrorMessage(error)}`,
         );
       });
+  }
+
+  private handlePartialStreamError(
+    error: unknown,
+    response: Response,
+    provider: TtsProvider,
+  ): void {
+    this.logger.error(
+      `Falha durante stream ${provider} apos envio da resposta: ${this.toErrorMessage(error)}`,
+    );
+    if (!response.writableEnded) {
+      response.end();
+    }
   }
 
   private async pipeWebStream(

@@ -58,7 +58,11 @@ export function configureNestApp(app: INestApplication): void {
     }),
   );
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
