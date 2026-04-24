@@ -26,12 +26,12 @@
 | 01 | Quick Wins Críticos (C3, M4, M7) | 🔴🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ✅ CONCLUÍDO (parcial — tasks automatizáveis) | 2026-04-24 | 2026-04-24 |
-| 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
+| 04 | JWT & Refresh Token (H2) | 🟠 | ⏭️ ADIADO (pós-MVP) | — | — |
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 09 | Validação Final & Reauditoria | — | ⬜ PENDENTE | — | — |
+| 09 | Validação Final & Reauditoria | — | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 
 ---
 
@@ -60,8 +60,8 @@
   - Task 3.2 (rotação manual de chaves Supabase/API keys) pendente — requer ação manual no dashboard
 
 ### Loop 04 — JWT & Refresh Token
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ⏭️ ADIADO
+- **Notas:** Adiado pós-MVP por decisão do time. JWT mantém expiresIn: 7d até implementação do refresh token.
 
 ### Loop 05 — CORS & Headers Hardening
 - **Status:** ✅ CONCLUÍDO
@@ -92,8 +92,26 @@
   - Task 8.3 (Mobile audit): 29 vulnerabilidades → 26 restantes após `npm audit fix`. 3 resolvidas (axios, follow-redirects, @xmldom/xmldom). 26 pendentes são transitivas via Expo ecosystem (xmldom, uuid, xml2js, @tootallnate/once, picomatch) — exigiriam `--force` com breaking changes.
 
 ### Loop 09 — Validação Final & Reauditoria
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Build do backend compilou sem erros.
+  - Todos os findings verificados via grep:
+    - ✅ C3: TTS protegido com JwtAuthGuard em voice.controller.ts
+    - ✅ M4: .env.production no .gitignore
+    - ✅ M7: *.tgz no .gitignore, arquivo removido
+    - ✅ H1: bcrypt cost 12 em auth.service.ts
+    - ✅ H5: MinLength(8) + regex de complexidade em signup.dto.ts
+    - ✅ H6: Throttle 5/min no login em auth.controller.ts
+    - ✅ M6: maskEmail() usado em auth.service.ts
+    - ✅ L3: @User() tipado com RequestUser (sem any)
+    - ✅ L4: UUID_REGEX validação no request-id.interceptor.ts
+    - ✅ M1/M2: CORS hardened — origin required em produção, regex limitada a 30 chars
+    - ✅ M3: crossOriginResourcePolicy: same-origin globalmente, cross-origin override no TTS
+    - ✅ H3: Categories com throttle 30/min e @Public documentado
+    - ✅ H4: Health separado — ping público (sem DB), status protegido com JwtAuthGuard
+    - ✅ L2: envFilePath condicional em app.module.ts
+    - ✅ L1: Swagger protegido em produção (NODE_ENV check em bootstrap-config.ts)
+  - Pendências restantes: C1 requer rotação manual de secrets; H2 adiado pós-MVP; L5 parcial (Cache-Control ok, cleanup pendente).
 
 ---
 
@@ -127,3 +145,31 @@
 | Mobile .env.local | `packages/mobile/.env.local` |
 | Vercel config (backend) | `packages/backend/vercel.json` |
 | Root .gitignore | `.gitignore` |
+
+---
+
+## 📊 Matriz de Status Final (Loop 09)
+
+| Finding | Severidade | Descrição | Status Final | Loop |
+|---------|-----------|-----------|--------------|------|
+| C1 | 🔴 CRITICAL | Secrets expostos no histórico git | ⚠️ PENDENTE (rotação manual) | 03 |
+| C2 | 🔴 CRITICAL | SERVICE_ROLE_KEY bypass RLS | ✅ DOCUMENTADO (trust boundary) | 03 |
+| C3 | 🔴 CRITICAL | TTS sem autenticação | ✅ CORRIGIDO | 01 |
+| H1 | 🟠 HIGH | bcrypt cost baixo (10) | ✅ CORRIGIDO (cost 12) | 02 |
+| H2 | 🟠 HIGH | JWT 7 dias sem refresh | ⏭️ ADIADO pós-MVP | 04 |
+| H3 | 🟠 HIGH | Categories sem proteção | ✅ CORRIGIDO (throttle 30/min) | 07 |
+| H4 | 🟠 HIGH | Health expõe detalhes | ✅ CORRIGIDO (ping/status) | 07 |
+| H5 | 🟠 HIGH | Password policy fraca | ✅ CORRIGIDO (8+ chars, complexidade) | 02 |
+| H6 | 🟠 HIGH | Sem brute force protection | ✅ CORRIGIDO (throttle 5/min login) | 02 |
+| M1 | 🟡 MEDIUM | CORS aceita sem origin | ✅ CORRIGIDO | 05 |
+| M2 | 🟡 MEDIUM | Regex CORS ampla | ✅ CORRIGIDO (limite 30 chars) | 05 |
+| M3 | 🟡 MEDIUM | crossOriginResourcePolicy global | ✅ CORRIGIDO (apenas TTS) | 05 |
+| M4 | 🟡 MEDIUM | .env.production no git | ✅ CORRIGIDO (.gitignore) | 01 |
+| M5 | 🟡 MEDIUM | npm vulnerabilities | ✅ PARCIAL (transitivas restantes) | 08 |
+| M6 | 🟡 MEDIUM | Email nos logs (PII) | ✅ CORRIGIDO (maskEmail) | 06 |
+| M7 | 🟡 MEDIUM | .tgz suspeito na raiz | ✅ CORRIGIDO (removido) | 01 |
+| L1 | 🟢 LOW | Swagger acessível em prod | ✅ JÁ PROTEGIDO | 08 |
+| L2 | 🟢 LOW | envFilePath sem fallback | ✅ CORRIGIDO | 03 |
+| L3 | 🟢 LOW | @User() tipado como any | ✅ CORRIGIDO (JwtPayload) | 06 |
+| L4 | 🟢 LOW | Request ID sem validação | ✅ CORRIGIDO (UUID regex) | 06 |
+| L5 | 🟢 LOW | TTS cache sem limite | ⚠️ PARCIAL (Cache-Control, cleanup pendente) | 07 |
