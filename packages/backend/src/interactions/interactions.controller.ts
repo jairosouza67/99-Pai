@@ -12,6 +12,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Interactions')
 @Controller('interactions')
@@ -24,7 +25,7 @@ export class InteractionsController {
   @Roles(Role.elderly)
   @ApiOperation({ summary: 'Log interaction (voice or button)' })
   @ApiResponse({ status: 201, description: 'Interaction logged' })
-  async logInteraction(@User() user: any, @Body() logDto: LogInteractionDto) {
+  async logInteraction(@User() user: RequestUser, @Body() logDto: LogInteractionDto) {
     return this.interactionsService.logInteraction(user.userId, logDto);
   }
 }

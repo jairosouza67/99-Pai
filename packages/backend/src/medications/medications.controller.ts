@@ -25,6 +25,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Medications')
 @Controller()
@@ -37,7 +38,7 @@ export class MedicationsController {
   @ApiOperation({ summary: 'Get all medications for an elderly user' })
   @ApiResponse({ status: 200, description: 'List of medications' })
   async getMedications(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
   ) {
     return this.medicationsService.getMedications(
@@ -50,7 +51,7 @@ export class MedicationsController {
   @ApiOperation({ summary: 'Create a new medication (caregiver only)' })
   @ApiResponse({ status: 201, description: 'Medication created' })
   async createMedication(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Body() createDto: CreateMedicationDto,
   ) {
@@ -65,7 +66,7 @@ export class MedicationsController {
   @ApiOperation({ summary: 'Update a medication' })
   @ApiResponse({ status: 200, description: 'Medication updated' })
   async updateMedication(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
     @Body() updateDto: UpdateMedicationDto,
@@ -82,7 +83,7 @@ export class MedicationsController {
   @ApiOperation({ summary: 'Delete a medication' })
   @ApiResponse({ status: 200, description: 'Medication deleted' })
   async deleteMedication(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
   ) {
@@ -97,7 +98,7 @@ export class MedicationsController {
   @Roles(Role.elderly)
   @ApiOperation({ summary: "Get today's medications for elderly user" })
   @ApiResponse({ status: 200, description: "Today's medications" })
-  async getTodayMedications(@User() user: any) {
+  async getTodayMedications(@User() user: RequestUser) {
     return this.medicationsService.getTodayMedications(user.userId);
   }
 
@@ -106,7 +107,7 @@ export class MedicationsController {
   @ApiOperation({ summary: 'Confirm or mark medication as missed' })
   @ApiResponse({ status: 201, description: 'Medication confirmation recorded' })
   async confirmMedication(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('id') id: string,
     @Body() confirmDto: ConfirmMedicationDto,
   ) {
@@ -125,7 +126,7 @@ export class MedicationsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Medication history' })
   async getMedicationHistory(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Query('from') from?: string,
     @Query('to') to?: string,

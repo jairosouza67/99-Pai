@@ -27,8 +27,10 @@ export class RequestIdInterceptor implements NestInterceptor {
       ? incomingHeader[0]
       : incomingHeader;
 
+    const UUID_REGEX =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const requestId =
-      typeof incomingId === 'string' && incomingId.trim().length > 0
+      typeof incomingId === 'string' && UUID_REGEX.test(incomingId)
         ? incomingId
         : randomUUID();
 

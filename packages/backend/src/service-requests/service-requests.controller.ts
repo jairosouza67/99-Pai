@@ -23,6 +23,7 @@ import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
 import { SupabaseService } from '../supabase/supabase.service';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Service Requests')
 @ApiBearerAuth()
@@ -61,7 +62,7 @@ export class ServiceRequestsController {
   @ApiResponse({ status: 400, description: 'Bad request or inactive offering' })
   @ApiResponse({ status: 404, description: 'Offering not found' })
   async create(
-    @User() user: { userId: string },
+    @User() user: RequestUser,
     @Body() dto: CreateServiceRequestDto,
   ) {
     const elderlyProfileId = await this.getElderlyProfileId(user.userId);

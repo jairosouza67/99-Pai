@@ -12,6 +12,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Caregiver')
 @Controller('caregiver')
@@ -24,7 +25,7 @@ export class CaregiverController {
   @Roles(Role.caregiver)
   @ApiOperation({ summary: 'Link caregiver to elderly user using link code' })
   @ApiResponse({ status: 201, description: 'Successfully linked' })
-  async linkElderly(@User() user: any, @Body() linkDto: LinkDto) {
+  async linkElderly(@User() user: RequestUser, @Body() linkDto: LinkDto) {
     return this.caregiverService.linkElderly(user.userId, linkDto);
   }
 
@@ -32,7 +33,7 @@ export class CaregiverController {
   @Roles(Role.caregiver)
   @ApiOperation({ summary: 'Get all elderly users linked to caregiver' })
   @ApiResponse({ status: 200, description: 'List of linked elderly users' })
-  async getLinkedElderly(@User() user: any) {
+  async getLinkedElderly(@User() user: RequestUser) {
     return this.caregiverService.getLinkedElderly(user.userId);
   }
 
@@ -41,7 +42,7 @@ export class CaregiverController {
   @ApiOperation({ summary: 'Get detailed info about a linked elderly user' })
   @ApiResponse({ status: 200, description: 'Elderly user details' })
   async getElderlyDetails(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
   ) {
     return this.caregiverService.getElderlyDetails(

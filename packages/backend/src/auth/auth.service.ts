@@ -14,6 +14,7 @@ import { SupabaseService } from '../supabase/supabase.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '../common/enums/role.enum';
+import { maskEmail } from '../common/utils/mask.util';
 
 @Injectable()
 export class AuthService {
@@ -113,12 +114,12 @@ export class AuthService {
 
     // Generate JWT token
     const token = this.jwtService.sign({
-      userId: user.id,
+      sub: user.id,
       email: user.email,
       role: user.role,
     });
 
-    this.logger.log(`User signed up: ${email} (${role})`);
+    this.logger.log(`User signed up: ${maskEmail(email)} (${role})`);
 
     return {
       token,
@@ -156,12 +157,12 @@ export class AuthService {
 
     // Generate JWT token
     const token = this.jwtService.sign({
-      userId: user.id,
+      sub: user.id,
       email: user.email,
       role: user.role,
     });
 
-    this.logger.log(`User logged in: ${email}`);
+    this.logger.log(`User logged in: ${maskEmail(email)}`);
 
     return {
       token,

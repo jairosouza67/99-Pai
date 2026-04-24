@@ -9,6 +9,7 @@ import {
 import { WeatherService } from './weather.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../common/decorators/user.decorator';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Weather')
 @Controller('weather')
@@ -21,7 +22,7 @@ export class WeatherController {
   @ApiOperation({ summary: 'Get weather forecast with clothing advice' })
   @ApiQuery({ name: 'location', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Weather data retrieved' })
-  async getWeather(@User() user: any, @Query('location') location?: string) {
+  async getWeather(@User() user: RequestUser, @Query('location') location?: string) {
     return this.weatherService.getWeather(user.userId, location);
   }
 }

@@ -24,6 +24,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Agenda')
 @Controller()
@@ -38,7 +39,7 @@ export class AgendaController {
   @ApiQuery({ name: 'to', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of agenda events' })
   async getAgenda(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
@@ -55,7 +56,7 @@ export class AgendaController {
   @ApiOperation({ summary: 'Create a new agenda event (caregiver only)' })
   @ApiResponse({ status: 201, description: 'Agenda event created' })
   async createAgenda(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Body() createDto: CreateAgendaDto,
   ) {
@@ -70,7 +71,7 @@ export class AgendaController {
   @ApiOperation({ summary: 'Update an agenda event' })
   @ApiResponse({ status: 200, description: 'Agenda event updated' })
   async updateAgenda(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
     @Body() updateDto: UpdateAgendaDto,
@@ -87,7 +88,7 @@ export class AgendaController {
   @ApiOperation({ summary: 'Delete an agenda event' })
   @ApiResponse({ status: 200, description: 'Agenda event deleted' })
   async deleteAgenda(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
   ) {
@@ -98,7 +99,7 @@ export class AgendaController {
   @Roles(Role.elderly)
   @ApiOperation({ summary: "Get today's agenda for elderly user" })
   @ApiResponse({ status: 200, description: "Today's agenda events" })
-  async getTodayAgenda(@User() user: any) {
+  async getTodayAgenda(@User() user: RequestUser) {
     return this.agendaService.getTodayAgenda(user.userId);
   }
 }

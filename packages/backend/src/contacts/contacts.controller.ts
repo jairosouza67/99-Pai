@@ -24,6 +24,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Contacts')
 @Controller()
@@ -36,7 +37,7 @@ export class ContactsController {
   @ApiOperation({ summary: 'Get all contacts for an elderly user' })
   @ApiResponse({ status: 200, description: 'List of contacts' })
   async getContacts(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
   ) {
     return this.contactsService.getContacts(user.userId, elderlyProfileId);
@@ -46,7 +47,7 @@ export class ContactsController {
   @ApiOperation({ summary: 'Create a new contact (caregiver only)' })
   @ApiResponse({ status: 201, description: 'Contact created' })
   async createContact(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Body() createDto: CreateContactDto,
   ) {
@@ -61,7 +62,7 @@ export class ContactsController {
   @ApiOperation({ summary: 'Update a contact' })
   @ApiResponse({ status: 200, description: 'Contact updated' })
   async updateContact(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
     @Body() updateDto: UpdateContactDto,
@@ -78,7 +79,7 @@ export class ContactsController {
   @ApiOperation({ summary: 'Delete a contact' })
   @ApiResponse({ status: 200, description: 'Contact deleted' })
   async deleteContact(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Param('id') id: string,
   ) {
@@ -95,7 +96,7 @@ export class ContactsController {
     summary: 'Get contacts for elderly user with overdue status',
   })
   @ApiResponse({ status: 200, description: 'List of contacts with status' })
-  async getContactsForElderly(@User() user: any) {
+  async getContactsForElderly(@User() user: RequestUser) {
     return this.contactsService.getContactsForElderly(user.userId);
   }
 
@@ -103,7 +104,7 @@ export class ContactsController {
   @Roles(Role.elderly)
   @ApiOperation({ summary: 'Mark that elderly user called this contact' })
   @ApiResponse({ status: 201, description: 'Call logged' })
-  async markCalled(@User() user: any, @Param('id') id: string) {
+  async markCalled(@User() user: RequestUser, @Param('id') id: string) {
     return this.contactsService.markCalled(user.userId, id);
   }
 
@@ -113,7 +114,7 @@ export class ContactsController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Call history' })
   async getCallHistory(
-    @User() user: any,
+    @User() user: RequestUser,
     @Param('elderlyProfileId') elderlyProfileId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,

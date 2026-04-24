@@ -12,6 +12,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Elderly Profile')
 @Controller('elderly')
@@ -24,7 +25,7 @@ export class ElderlyController {
   @Roles(Role.elderly)
   @ApiOperation({ summary: 'Get elderly user profile' })
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
-  async getProfile(@User() user: any) {
+  async getProfile(@User() user: RequestUser) {
     return this.elderlyService.getProfile(user.userId);
   }
 
@@ -33,7 +34,7 @@ export class ElderlyController {
   @ApiOperation({ summary: 'Update elderly user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   async updateProfile(
-    @User() user: any,
+    @User() user: RequestUser,
     @Body() updateDto: UpdateElderlyProfileDto,
   ) {
     return this.elderlyService.updateProfile(user.userId, updateDto);

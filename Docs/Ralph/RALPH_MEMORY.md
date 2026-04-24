@@ -28,7 +28,7 @@
 | 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ✅ CONCLUÍDO (parcial — tasks automatizáveis) | 2026-04-24 | 2026-04-24 |
 | 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
 | 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
-| 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ⬜ PENDENTE | — | — |
+| 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
 | 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ⬜ PENDENTE | — | — |
 | 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ⬜ PENDENTE | — | — |
 | 09 | Validação Final & Reauditoria | — | ⬜ PENDENTE | — | — |
@@ -71,8 +71,11 @@
   - Task 5.3: `crossOriginResourcePolicy` alterado de `cross-origin` para `same-origin` globalmente; override `cross-origin` adicionado no VoiceController (rota TTS)
 
 ### Loop 06 — Logging, Observability & Type Safety
-- **Status:** ⬜ PENDENTE
-- **Notas:** —
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 6.1: Criado `maskEmail()` em `common/utils/mask.util.ts`; emails mascarados nos logs de signup e login em `auth.service.ts`
+  - Task 6.2: Criadas interfaces `JwtPayload` e `RequestUser` em `auth/interfaces/jwt-payload.interface.ts`; `@User()` decorator tipado com `RequestUser`; todos os controllers atualizados de `any`/`{ userId: string }` para `RequestUser`; JWT signing alterado de `userId` para `sub` (padrão JWT); `JwtStrategy.validate()` tipado com `JwtPayload`
+  - Task 6.3: Validação UUID v4 adicionada no `request-id.interceptor.ts` — header `x-request-id` malicioso é ignorado e novo UUID é gerado
 
 ### Loop 07 — Endpoint Security
 - **Status:** ⬜ PENDENTE

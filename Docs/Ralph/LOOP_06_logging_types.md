@@ -38,7 +38,7 @@
    this.logger.log(`User logged in: ${maskEmail(email)}`);
    ```
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 6.2 — Tipar `@User()` decorator (L3)
 **Arquivo:** `packages/backend/src/auth/auth.controller.ts` (~L40)
@@ -59,7 +59,7 @@
    ```
 2. Substituir `any` por `JwtPayload` em todos os controllers
 
-- [ ] Concluído
+- [x] Concluído
 
 ### Task 6.3 — Validar formato do Request ID (L4)
 **Arquivo:** `packages/backend/src/common/interceptors/request-id.interceptor.ts`
@@ -74,13 +74,13 @@ const requestId = (typeof incomingId === 'string' && UUID_REGEX.test(incomingId)
   : randomUUID();
 ```
 
-- [ ] Concluído
+- [x] Concluído
 
 ---
 
 ## 🔄 Pós-Loop
-1. [ ] Verificar logs — emails devem aparecer mascarados
-2. [ ] TypeScript compila sem `any` nos controllers
-3. [ ] Testar request com `x-request-id` malicioso → deve ser ignorado
-4. [ ] Atualizar `RALPH_MEMORY.md` → Loop 06 → ✅ CONCLUÍDO
-5. [ ] Commit: `fix(security): loop-06 PII masking, type safety, log injection`
+1. [x] Verificar logs — emails devem aparecer mascarados
+2. [x] TypeScript compila sem `any` nos controllers
+3. [x] Testar request com `x-request-id` malicioso → deve ser ignorado
+4. [x] Atualizar `RALPH_MEMORY.md` → Loop 06 → ✅ CONCLUÍDO
+5. [x] Commit: `fix(security): loop-06 PII masking, type safety, log injection`

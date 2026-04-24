@@ -11,6 +11,7 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { User } from '../common/decorators/user.decorator';
+import type { RequestUser } from './interfaces/jwt-payload.interface';
 
 @ApiTags('Authentication')
 @Controller()
@@ -39,7 +40,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
   @ApiResponse({ status: 200, description: 'User information retrieved' })
-  async getMe(@User() user: any) {
+  async getMe(@User() user: RequestUser) {
     return this.authService.getMe(user.userId);
   }
 }

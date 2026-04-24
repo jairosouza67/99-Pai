@@ -26,6 +26,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { User } from '../common/decorators/user.decorator';
 import { Role } from '../common/enums/role.enum';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Offerings')
 @Controller('offerings')
@@ -52,7 +53,7 @@ export class OfferingsController {
     description: 'Category or subcategory not found',
   })
   async create(
-    @User() user: { userId: string },
+    @User() user: RequestUser,
     @Body() createOfferingDto: CreateOfferingDto,
   ) {
     return this.offeringsService.create(user.userId, createOfferingDto);
@@ -125,7 +126,7 @@ export class OfferingsController {
   @ApiResponse({ status: 404, description: 'Offering not found' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @User() user: { userId: string },
+    @User() user: RequestUser,
     @Body() updateOfferingDto: UpdateOfferingDto,
   ) {
     return this.offeringsService.update(id, user.userId, updateOfferingDto);
@@ -142,7 +143,7 @@ export class OfferingsController {
   @ApiResponse({ status: 404, description: 'Offering not found' })
   async deactivate(
     @Param('id', ParseUUIDPipe) id: string,
-    @User() user: { userId: string },
+    @User() user: RequestUser,
   ) {
     return this.offeringsService.deactivate(id, user.userId);
   }
@@ -165,7 +166,7 @@ export class OfferingsController {
   @ApiResponse({ status: 404, description: 'Offering not found' })
   async requestContact(
     @Param('id', ParseUUIDPipe) id: string,
-    @User() user: { userId: string },
+    @User() user: RequestUser,
   ) {
     return this.offeringsService.requestContact(id, user.userId);
   }

@@ -9,6 +9,7 @@ import { NotificationsService } from './notifications.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { User } from '../common/decorators/user.decorator';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 
 @ApiTags('Notifications')
 @Controller('notifications')
@@ -21,7 +22,7 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Register push notification token' })
   @ApiResponse({ status: 201, description: 'Token registered successfully' })
   async registerToken(
-    @User() user: any,
+    @User() user: RequestUser,
     @Body() registerDto: RegisterTokenDto,
   ) {
     return this.notificationsService.registerToken(user.userId, registerDto);
