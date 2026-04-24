@@ -1,0 +1,109 @@
+# 🧠 RALPH MEMORY — 99-Pai Security Hardening
+
+> **Este arquivo é a memória persistente do Ralph Loop.**
+> Cada loop deve ler este arquivo ao iniciar e atualizá-lo ao finalizar.
+> Nunca delete informações anteriores — apenas adicione ou atualize status.
+
+---
+
+## 📊 Visão Geral do Projeto
+
+| Campo | Valor |
+|-------|-------|
+| **Projeto** | 99-Pai |
+| **Tipo** | Monorepo (NestJS backend + Expo mobile + Supabase) |
+| **Deploy** | Vercel (backend: `99pai-api.vercel.app`, web: `99pai-web.vercel.app`) |
+| **Origem** | Auditoria de Segurança — 2026-04-24 |
+| **Total Findings** | 21 (3 Critical, 6 High, 7 Medium, 5 Low) |
+| **Relatório Completo** | `Docs/Ralph/00_AUDIT_REPORT.md` |
+
+---
+
+## 🗺️ Mapa de Tasks
+
+| Loop | Task | Severidade | Status | Data Início | Data Fim |
+|------|------|-----------|--------|-------------|----------|
+| 01 | Quick Wins Críticos (C3, M4, M7) | 🔴🟡 | ✅ CONCLUÍDO | 2026-04-24 | 2026-04-24 |
+| 02 | Hardening de Autenticação (H1, H5, H6) | 🟠 | ⬜ PENDENTE | — | — |
+| 03 | Secrets & Env Security (C1, C2, L2) | 🔴 | ⬜ PENDENTE | — | — |
+| 04 | JWT & Refresh Token (H2) | 🟠 | ⬜ PENDENTE | — | — |
+| 05 | CORS & Headers Hardening (M1, M2, M3) | 🟡 | ⬜ PENDENTE | — | — |
+| 06 | Logging, Observability & Type Safety (M6, L3, L4) | 🟡🟢 | ⬜ PENDENTE | — | — |
+| 07 | Endpoint Security (H3, H4, L5) | 🟠🟡🟢 | ⬜ PENDENTE | — | — |
+| 08 | Supply Chain & Dependencies (M5, M7, L1) | 🟡🟢 | ⬜ PENDENTE | — | — |
+| 09 | Validação Final & Reauditoria | — | ⬜ PENDENTE | — | — |
+
+---
+
+## 📝 Log de Execução
+
+### Loop 01 — Quick Wins Críticos
+- **Status:** ✅ CONCLUÍDO
+- **Notas:**
+  - Task 1.1: Adicionado @UseGuards(JwtAuthGuard) ao endpoint TTS em voice.controller.ts
+  - Task 1.2: Adicionado .env.production e .env.production.local ao .gitignore
+  - Task 1.3: Removido nestjs-core-11.0.1.tgz da raiz e adicionado *.tgz ao .gitignore
+
+### Loop 02 — Hardening de Autenticação
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 03 — Secrets & Env Security
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 04 — JWT & Refresh Token
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 05 — CORS & Headers Hardening
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 06 — Logging, Observability & Type Safety
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 07 — Endpoint Security
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 08 — Supply Chain & Dependencies
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+### Loop 09 — Validação Final & Reauditoria
+- **Status:** ⬜ PENDENTE
+- **Notas:** —
+
+---
+
+## ⚠️ Decisões Importantes
+
+> Registre aqui qualquer decisão tomada durante os loops que afete loops futuros.
+
+| Data | Loop | Decisão | Motivo |
+|------|------|---------|--------|
+| — | — | — | — |
+
+---
+
+## 🔗 Referências Rápidas
+
+| Recurso | Caminho |
+|---------|---------|
+| Backend src | `packages/backend/src/` |
+| Auth module | `packages/backend/src/auth/` |
+| Voice module | `packages/backend/src/voice/` |
+| Categories module | `packages/backend/src/categories/` |
+| Health module | `packages/backend/src/health/` |
+| Bootstrap config | `packages/backend/src/bootstrap-config.ts` |
+| App module | `packages/backend/src/app.module.ts` |
+| Supabase service | `packages/backend/src/supabase/supabase.service.ts` |
+| Request ID interceptor | `packages/backend/src/common/interceptors/request-id.interceptor.ts` |
+| Supabase migrations | `supabase/migrations/` |
+| Root .env | `.env` |
+| Backend .env.production | `packages/backend/.env.production` |
+| Mobile .env.local | `packages/mobile/.env.local` |
+| Vercel config (backend) | `packages/backend/vercel.json` |
+| Root .gitignore | `.gitignore` |

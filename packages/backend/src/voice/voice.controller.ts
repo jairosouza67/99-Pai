@@ -1,6 +1,7 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiProduces, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TtsQueryDto } from './dto/tts-query.dto';
 import { VoiceService } from './voice.service';
 
@@ -9,6 +10,7 @@ import { VoiceService } from './voice.service';
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get('tts')
   @ApiOperation({
     summary:
