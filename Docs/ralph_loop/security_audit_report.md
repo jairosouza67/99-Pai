@@ -183,7 +183,7 @@ if (recent && recent.count >= 10) {
 **Localização:** [.env](file:///d:/VS%20Code/99-Pai/.env) linhas 1-2
 
 ```
-DATABASE_URL=postgresql://postgres:92015f16389e4c6a83c367e6ee65f8d653da75844a6d47b69c345e366a314279@db.nilzzmiinztpaknxlvcu.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres:[REDACTED]@db.<project-ref>.supabase.co:5432/postgres
 ```
 
 **Risco:** A senha do banco permite conexão direta via `psql`, bypass completo de RLS (como superuser).
