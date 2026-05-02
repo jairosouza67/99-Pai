@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 export interface PushNotificationState {
   expoPushToken?: Notifications.ExpoPushToken;
@@ -94,9 +94,12 @@ export const usePushNotifications = (): PushNotificationState => {
       setExpoPushToken(token);
       if (token && user?.id) {
         try {
-          await api.post('/notifications/register', {
-            pushToken: token.data,
-            platform: Platform.OS,
+          await supabase.functions.invoke('notification-register', {
+            body: {
+              action: 'register-token',
+              pushToken: token.data,
+              platform: Platform.OS,
+            },
           });
         } catch (error) {
           console.error('Error registering push token:', error);
@@ -111,8 +114,8 @@ export const usePushNotifications = (): PushNotificationState => {
       });
 
     responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification Response", response);
+      Notifications.addNotificationResponseReceivedListener((_response) => {
+        // Notification response handled silently in production
       });
 
     return () => {

@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { LargeButton } from '../../src/components/shared/LargeButton';
 import { Card } from '../../src/components/shared/Card';
 import { useVoice } from '../../src/hooks/useVoice';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { AgendaEvent } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
@@ -21,12 +21,37 @@ export default function ElderlyAgendaScreen() {
 
   const loadEvents = async () => {
     try {
-      const response = await api.get('/agenda/today');
-      const items = (response.data?.items || []) as AgendaEvent[];
-      
-      // Sort by time
-      items.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+      if (!user?.id) return;
 
+      // Get elderly profile
+      const { data: profile, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('id')
+        .eq('userId', user.legacyId)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error loading profile:', profileError);
+        return;
+      }
+
+      // Get today's agenda events
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('agendaevent')
+        .select('*')
+        .eq('elderlyProfileId', profile.id)
+        .gte('dateTime', todayStr)
+        .lt('dateTime', `${todayStr}T23:59:59`)
+        .order('dateTime', { ascending: true });
+
+      if (eventsError) {
+        throw new Error(eventsError.message);
+      }
+
+      const items = (eventsData || []) as AgendaEvent[];
+      
+      // Sort by time (already sorted by Supabase query)
       setEvents(items);
 
       if (items.length > 0) {

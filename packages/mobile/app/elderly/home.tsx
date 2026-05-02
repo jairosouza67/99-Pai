@@ -10,7 +10,7 @@ import { ElderlyProfile, WeatherData } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 
 export default function ElderlyHomeScreen() {
   const router = useRouter();
@@ -23,18 +23,36 @@ export default function ElderlyHomeScreen() {
     try {
       if (!user?.id) return;
 
-      const [profileRes, weatherRes] = await Promise.all([
-        api.get('/elderly/profile'),
-        api.get('/weather').catch(() => ({ data: null })),
-      ]);
+      // Load profile from Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('*')
+        .eq('userId', user.legacyId)
+        .single();
 
-      const profileData = (profileRes.data ?? null) as ElderlyProfile | null;
-      const weatherData = (weatherRes.data ?? null) as WeatherData | null;
+      if (profileError) {
+        console.error('Error loading profile:', profileError);
+      }
 
-      setProfile(profileData);
+      const profile = (profileData as ElderlyProfile | null) ?? null;
+
+      // Weather via Edge Function
+      let weatherData: WeatherData | null = null;
+      try {
+        const { data, error } = await supabase.functions.invoke('weather-get', {
+          body: {},
+        });
+        if (!error && data) {
+          weatherData = data as WeatherData;
+        }
+      } catch {
+        weatherData = null;
+      }
+
+      setProfile(profile);
       setWeather(weatherData);
 
-      const greeting = `Olá ${profileData?.preferredName || user?.name}. ${weatherData?.weatherDescription || ''}. ${weatherData?.clothingAdvice || ''}`;
+      const greeting = `Olá ${profile?.preferredName || user?.name}. ${weatherData?.weatherDescription || ''}. ${weatherData?.clothingAdvice || ''}`;
       speak(greeting);
     } catch (error) {
       console.error('Error loading data:', error);

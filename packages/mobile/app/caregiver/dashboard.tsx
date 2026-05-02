@@ -6,7 +6,7 @@ import { LargeButton } from '../../src/components/shared/LargeButton';
 import { LargeInput } from '../../src/components/shared/LargeInput';
 import { Card } from '../../src/components/shared/Card';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 import { ElderlyProfileSummary } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 export default function CaregiverDashboardScreen() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [elderlyList, setElderlyList] = useState<ElderlyProfileSummary[]>([]);
   const [linkModalVisible, setLinkModalVisible] = useState(false);
   const [linkCode, setLinkCode] = useState('');
@@ -22,8 +22,27 @@ export default function CaregiverDashboardScreen() {
 
   const loadElderlyList = async () => {
     try {
-      const response = await api.get('/caregiver/elderly');
-      setElderlyList(response.data?.items || []);
+      if (!user?.id) return;
+      const { data: links, error } = await supabase
+        .from('caregiverlink')
+        .select('elderlyprofile (id, preferredName, autonomyScore)')
+        .eq('caregiverUserId', user.legacyId);
+
+      if (error) throw error;
+
+      const items: ElderlyProfileSummary[] = (links || []).map((link: any) => {
+        const profile = link.elderlyprofile;
+        return {
+          id: profile?.id ?? '',
+          preferredName: profile?.preferredName || 'Idoso',
+          autonomyScore: profile?.autonomyScore ?? null,
+          todayMedicationStats: { total: 0, confirmed: 0, missed: 0 },
+          lastInteraction: null,
+          hasAlert: false,
+        };
+      });
+
+      setElderlyList(items);
     } catch (error) {
       console.error('Error loading elderly list:', error);
     }
@@ -32,7 +51,7 @@ export default function CaregiverDashboardScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadElderlyList();
-    }, [])
+    }, [user?.id])
   );
 
   const handleLink = async () => {
@@ -43,7 +62,10 @@ export default function CaregiverDashboardScreen() {
 
     setIsLinking(true);
     try {
-      await api.post('/caregiver/link', { linkCode: linkCode.toUpperCase() });
+      const { error } = await supabase.functions.invoke('caregiver-link', {
+        body: { action: 'link-caregiver', linkCode: linkCode.toUpperCase() },
+      });
+      if (error) throw new Error(error.message);
       Alert.alert('Sucesso', 'Idoso vinculado com sucesso!');
       setLinkModalVisible(false);
       setLinkCode('');

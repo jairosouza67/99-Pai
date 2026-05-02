@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { LargeButton } from '../../src/components/shared/LargeButton';
 import { Card } from '../../src/components/shared/Card';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 import { ElderlyProfile } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,8 +18,19 @@ export default function ElderlySettingsScreen() {
 
   const loadProfile = async () => {
     try {
-      const response = await api.get('/elderly/profile');
-      setProfile((response.data as ElderlyProfile) ?? null);
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from('elderlyprofile')
+        .select('*')
+        .eq('userId', user.legacyId)
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setProfile(data as ElderlyProfile ?? null);
     } catch (error) {
       console.error('Error loading profile:', error);
     }

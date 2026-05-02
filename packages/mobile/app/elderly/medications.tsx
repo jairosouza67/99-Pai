@@ -9,17 +9,74 @@ import { TodayMedication } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function ElderlyMedicationsScreen() {
   const router = useRouter();
   const { speak } = useVoice();
+  const { user } = useAuth();
   const [medications, setMedications] = useState<TodayMedication[]>([]);
 
   const loadMedications = async () => {
     try {
-      const response = await api.get('/medications/today');
-      const items = (response.data?.items || []) as TodayMedication[];
+      if (!user?.id) return;
+
+      // Get elderly profile
+      const { data: profile, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('id')
+        .eq('userId', user.legacyId)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error loading profile:', profileError);
+        return;
+      }
+
+      // Get today's medications (active ones)
+      const { data: medsData, error: medsError } = await supabase
+        .from('medication')
+        .select('*')
+        .eq('elderlyProfileId', profile.id)
+        .eq('active', true)
+        .order('time', { ascending: true });
+
+      if (medsError) {
+        throw new Error(medsError.message);
+      }
+
+      // Get today's medication history
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data: historyData, error: historyError } = await supabase
+        .from('medicationhistory')
+        .select('*')
+        .eq('elderlyProfileId', profile.id)
+        .eq('scheduledDate', todayStr);
+
+      if (historyError) {
+        throw new Error(historyError.message);
+      }
+
+      // Combine medications with their history status
+      const items = (medsData || []).map((med) => {
+        const history = (historyData || []).find(
+          (h) => h.medicationId === med.id
+        );
+        const status: 'pending' | 'confirmed' | 'missed' = history
+          ? (history.confirmed ? 'confirmed' : 'missed')
+          : 'pending';
+
+        return {
+          id: med.id,
+          name: med.name,
+          time: med.time,
+          dosage: med.dosage,
+          status,
+          historyId: history?.id ?? null,
+        } as TodayMedication;
+      });
+
       setMedications(items);
 
       const pending = items.filter((m) => m.status === 'pending');
@@ -40,9 +97,53 @@ export default function ElderlyMedicationsScreen() {
 
   const handleConfirm = async (medication: TodayMedication) => {
     try {
-      await api.post(`/medications/${medication.id}/confirm`, {
-        confirmed: true,
-      });
+      if (!user?.id) return;
+
+      // Get elderly profile
+      const { data: profile, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('id')
+        .eq('userId', user.legacyId)
+        .single();
+
+      if (profileError || !profile) {
+        Alert.alert('Erro', 'Não foi possível confirmar');
+        return;
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Upsert medication history: if history exists, update it; otherwise insert
+      if (medication.historyId) {
+        const { error: updateError } = await supabase
+          .from('medicationhistory')
+          .update({
+            confirmed: true,
+            respondedAt: new Date().toISOString(),
+          })
+          .eq('id', medication.historyId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from('medicationhistory')
+          .insert({
+            medicationId: medication.id,
+            elderlyProfileId: profile.id,
+            confirmed: true,
+            scheduledDate: todayStr,
+            respondedAt: new Date().toISOString(),
+            caregiverNotified: false,
+            retryCount: 0,
+          });
+
+        if (insertError) {
+          throw new Error(insertError.message);
+        }
+      }
+
       speak('Ótimo!');
       loadMedications();
     } catch (error) {

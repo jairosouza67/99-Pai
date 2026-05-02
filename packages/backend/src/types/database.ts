@@ -1,1 +1,0 @@
-export type { Database } from '@99-pai/shared';

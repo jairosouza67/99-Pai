@@ -2,6 +2,7 @@ export type UserRole = 'elderly' | 'caregiver' | 'provider' | 'admin';
 
 export interface User {
   id: string;
+  legacyId: string;
   email: string;
   name: string;
   role: UserRole;
@@ -44,6 +45,7 @@ export interface TodayMedication {
 
 export interface Contact {
   id: string;
+  elderlyProfileId: string;
   name: string;
   phone: string;
   thresholdDays: number;

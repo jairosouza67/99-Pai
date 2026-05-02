@@ -2,7 +2,7 @@ import * as Speech from 'expo-speech';
 import { Audio, type AVPlaybackStatus } from 'expo-av';
 import Voice from '@react-native-voice/voice';
 import { Platform } from 'react-native';
-import { api } from './api';
+import { supabase } from '../lib/supabase';
 
 interface VoiceConfig {
   language: string;
@@ -71,10 +71,11 @@ export class VoiceService {
     await this.ensureAudioMode();
     await this.stopCurrentSound();
 
-    const ttsUri = api.getUri({
-      url: '/voice/tts',
-      params: { text },
+    const { data, error } = await supabase.functions.invoke('voice-tts', {
+      body: { text },
     });
+    if (error) throw new Error(error.message);
+    const ttsUri = data.url;
 
     const { sound } = await Audio.Sound.createAsync(
       { uri: ttsUri },

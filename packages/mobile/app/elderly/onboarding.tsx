@@ -5,7 +5,7 @@ import { LargeButton } from '../../src/components/shared/LargeButton';
 import { LargeInput } from '../../src/components/shared/LargeInput';
 import { VoiceButton } from '../../src/components/shared/VoiceButton';
 import { useVoice } from '../../src/hooks/useVoice';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { colors, spacing } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -111,12 +111,30 @@ export default function OnboardingScreen() {
     );
 
     try {
-      await api.patch('/elderly/profile', {
-        preferredName: name || 'Amigo',
-        autonomyScore,
-        interactionTimes: ['08:00', '12:00', '16:00', '19:00'],
-        onboardingComplete: true,
-      });
+      // Get elderly profile for the current user
+      const { data: profile, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('id')
+        .eq('userId', user?.id ?? '')
+        .single();
+
+      if (profileError || !profile) {
+        throw new Error(profileError?.message || 'Perfil não encontrado');
+      }
+
+      const { error } = await supabase
+        .from('elderlyprofile')
+        .update({
+          preferredName: name || 'Amigo',
+          autonomyScore,
+          interactionTimes: ['08:00', '12:00', '16:00', '19:00'],
+          onboardingComplete: true,
+        })
+        .eq('id', profile.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
 
       speak('Tudo pronto! Bem-vindo ao 99por1.');
       setTimeout(() => {

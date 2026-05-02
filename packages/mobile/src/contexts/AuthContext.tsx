@@ -6,8 +6,8 @@ import React, {
   ReactNode,
 } from 'react';
 import { User, UserRole } from '../types';
-import { api, getApiErrorMessage, setAuthToken } from '../services/api';
-import { authStorage } from '../lib/authStorage';
+import { supabase } from '../lib/supabase';
+import { getSupabaseErrorMessage } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -26,80 +26,92 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function fetchLegacyId(authId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('user_id_mapping')
+    .select('legacy_id')
+    .eq('auth_id', authId)
+    .single();
+
+  if (error || !data) {
+    console.warn('Legacy ID mapping not found for auth ID:', authId);
+    return authId; // fallback to auth.id for new users without mapping yet
+  }
+  return data.legacy_id;
+}
+
+function mapSupabaseUserToAppUser(
+  supabaseUser: import('@supabase/supabase-js').User,
+  legacyId: string,
+): User {
+  return {
+    id: supabaseUser.id,
+    legacyId,
+    email: supabaseUser.email ?? '',
+    name: supabaseUser.user_metadata?.name ?? '',
+    role: (supabaseUser.user_metadata?.role as UserRole) ?? 'elderly',
+    onboardingComplete:
+      supabaseUser.user_metadata?.onboardingComplete ?? false,
+  };
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const persistSession = async (token: string, userData: User) => {
-    setAuthToken(token);
-    await Promise.all([authStorage.setToken(token), authStorage.setUser(userData)]);
-    setUser(userData);
-  };
-
-  const loadProfileFromApi = async (): Promise<User | null> => {
-    try {
-      const response = await api.get('/auth/me');
-      return response.data?.user ?? null;
-    } catch (error) {
-      console.error('Error loading user profile from API:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
     const bootstrapSession = async () => {
       try {
-        const [token, storedUser] = await Promise.all([
-          authStorage.getToken(),
-          authStorage.getUser(),
-        ]);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (!token) {
+        if (session?.user) {
+          const legacyId = await fetchLegacyId(session.user.id);
+          setUser(mapSupabaseUserToAppUser(session.user, legacyId));
+        } else {
           setUser(null);
-          return;
         }
-
-        setAuthToken(token);
-        if (storedUser) {
-          setUser(storedUser);
-        }
-
-        const freshUser = await loadProfileFromApi();
-        if (!freshUser) {
-          await authStorage.clear();
-          setAuthToken(null);
-          setUser(null);
-          return;
-        }
-
-        setUser(freshUser);
-        await authStorage.setUser(freshUser);
+      } catch (error) {
+        console.error('Error bootstrapping session:', error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     bootstrapSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const legacyId = await fetchLegacyId(session.user.id);
+        setUser(mapSupabaseUserToAppUser(session.user, legacyId));
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      const response = await api.post('/auth/login', {
+      const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       });
-      const token = response.data?.token as string;
-      const userData = response.data?.user as User;
 
-      if (!token || !userData) {
-        throw new Error('Resposta de autenticação inválida');
+      if (error) {
+        throw new Error(error.message);
       }
-
-      await persistSession(token, userData);
     } catch (error) {
-      throw new Error(getApiErrorMessage(error, 'Erro ao fazer login'));
+      throw new Error(getSupabaseErrorMessage(error, 'Erro ao fazer login'));
     }
   };
 
@@ -112,34 +124,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      const response = await api.post('/signup', {
+      const { error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
-        name,
-        role,
+        options: {
+          data: { name, role },
+        },
       });
 
-      const token = response.data?.token as string;
-      const userData = response.data?.user as User;
-
-      if (!token || !userData) {
-        throw new Error('Resposta de cadastro inválida');
+      if (error) {
+        throw new Error(error.message);
       }
-
-      await persistSession(token, userData);
     } catch (error) {
-      throw new Error(getApiErrorMessage(error, 'Erro ao criar conta'));
+      throw new Error(getSupabaseErrorMessage(error, 'Erro ao criar conta'));
     }
   };
 
   const logout = async () => {
     try {
-      await authStorage.clear();
-      setAuthToken(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw new Error(error.message);
+      }
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      throw new Error(getApiErrorMessage(error, 'Erro ao fazer logout'));
+      throw new Error(getSupabaseErrorMessage(error, 'Erro ao fazer logout'));
     }
   };
 
@@ -148,10 +158,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const updatedUser = await loadProfileFromApi();
-    if (updatedUser) {
-      setUser(updatedUser);
-      await authStorage.setUser(updatedUser);
+    const {
+      data: { user: freshUser },
+    } = await supabase.auth.getUser();
+
+    if (freshUser) {
+      const legacyId = await fetchLegacyId(freshUser.id);
+      setUser(mapSupabaseUserToAppUser(freshUser, legacyId));
     }
   };
 

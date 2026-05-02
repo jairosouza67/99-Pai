@@ -6,16 +6,17 @@ Plataforma de cuidado para pais idosos (Micro-SaaS).
 
 Este repositório está configurado como um monorepo (npm workspaces) com a seguinte estrutura:
 
-- `packages/backend/`: API em NestJS integrada com Supabase (PostgreSQL, Auth, Edge Functions).
 - `packages/mobile/`: Aplicativo mobile desenvolvido usando Expo, React Native e Expo Router.
-- `packages/shared/`: Código, tipos e configurações compartilhadas entre backend e frontend (como os tipos gerados pelo Supabase).
+- `packages/shared/`: Código, tipos e configurações compartilhadas.
+- `supabase/functions/`: Edge Functions (Deno) para lógica de negócio server-side.
+- `supabase/migrations/`: Migrations SQL (RLS policies, helpers, schema).
 - `Docs/`: Toda a documentação técnica e de negócio.
 
 ## Tecnologias Principais
 
-- **Backend**: NestJS, Supabase (Banco de dados, Auth, Storage, Edge Functions)
-- **Mobile**: React Native, Expo, React Navigation, TailwindCSS v4
-- **State Management**: Zustand, TanStack React Query v5
+- **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions, RLS)
+- **Mobile**: React Native, Expo, Expo Router
+- **State Management**: Zustand
 - **Monorepo**: npm workspaces
 - **Tipagem**: TypeScript
 
@@ -29,19 +30,16 @@ npm install
 
 ## Como executar
 
-Para rodar os projetos, utilize os seguintes comandos da raiz:
-
-**Backend:**
-```bash
-npm run start:backend
-```
-
 **Mobile:**
 ```bash
 npm run start:mobile
 ```
 
+**Build web:**
+```bash
+npm run build:web
+```
+
 ## Documentação
 
-Toda a documentação detalhada (arquitetura, API, design, testes) se encontra na pasta `Docs/`.
-Leia o [API_DOCUMENTATION.md](Docs/API_DOCUMENTATION.md) ou explore os ADRs.
+Toda a documentação detalhada (arquitetura, API, design, migração) se encontra na pasta `Docs/`.

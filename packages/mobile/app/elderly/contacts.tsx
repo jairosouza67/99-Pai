@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LargeButton } from '../../src/components/shared/LargeButton';
 import { Card } from '../../src/components/shared/Card';
 import { useVoice } from '../../src/hooks/useVoice';
-import { api } from '../../src/services/api';
+import { supabase } from '../../src/lib/supabase';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { ContactWithStatus } from '../../src/types';
 import { colors, spacing } from '../../src/constants/theme';
@@ -20,8 +20,40 @@ export default function ElderlyContactsScreen() {
 
   const loadContacts = async () => {
     try {
-      const response = await api.get('/contacts');
-      const items = (response.data?.items || []) as ContactWithStatus[];
+      if (!user?.id) return;
+
+      // Fetch elderly profile to get elderlyProfileId
+      const { data: profile, error: profileError } = await supabase
+        .from('elderlyprofile')
+        .select('id')
+        .eq('userId', user.legacyId)
+        .single();
+
+      if (profileError || !profile) {
+        console.error('Error loading profile:', profileError);
+        return;
+      }
+
+      const { data: contactsData, error: contactsError } = await supabase
+        .from('contact')
+        .select('*')
+        .eq('elderlyProfileId', profile.id)
+        .order('createdAt', { ascending: false });
+
+      if (contactsError) {
+        throw new Error(contactsError.message);
+      }
+
+      const items = (contactsData || []).map((c) => {
+        const daysOverdue = c.lastCallAt
+          ? Math.floor((Date.now() - new Date(c.lastCallAt).getTime()) / (1000 * 60 * 60 * 24))
+          : c.thresholdDays;
+        return {
+          ...c,
+          daysOverdue,
+          isOverdue: daysOverdue >= c.thresholdDays,
+        } as ContactWithStatus;
+      });
 
       setContacts(items);
 
@@ -47,7 +79,23 @@ export default function ElderlyContactsScreen() {
 
       const canOpen = await Linking.canOpenURL(phoneNumber);
       if (canOpen) {
-        await api.post(`/contacts/${contact.id}/called`);
+        const now = new Date().toISOString();
+
+        // Update contact's lastCallAt
+        await supabase
+          .from('contact')
+          .update({ lastCallAt: now })
+          .eq('id', contact.id);
+
+        // Insert call history record
+        await supabase
+          .from('callhistory')
+          .insert({
+            contactId: contact.id,
+            elderlyProfileId: contact.elderlyProfileId,
+            calledAt: now,
+          });
+
         await Linking.openURL(phoneNumber);
         loadContacts();
       } else {

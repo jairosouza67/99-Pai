@@ -55,9 +55,9 @@ yarn ios
 
 ## Configuração
 
-O app se conecta automaticamente ao backend configurado em:
-- **Preview**: https://1af7ee006.na105.preview.abacusai.app/
-- A URL pode ser configurada via variável de ambiente `EXPO_PUBLIC_API_URL`
+O app se conecta diretamente ao Supabase configurado via variáveis de ambiente:
+- `EXPO_PUBLIC_SUPABASE_URL`: URL do projeto Supabase
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Chave anon do projeto Supabase
 
 ## Estrutura do Projeto
 

@@ -6,7 +6,7 @@ import { format, parse } from 'date-fns';
 import { LargeButton } from '../../../src/components/shared/LargeButton';
 import { LargeInput } from '../../../src/components/shared/LargeInput';
 import { Card } from '../../../src/components/shared/Card';
-import { api } from '../../../src/services/api';
+import { supabase } from '../../../src/lib/supabase';
 import { Medication, Contact, AgendaEvent, MedicationHistory } from '../../../src/types';
 import { colors, spacing } from '../../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,17 +40,45 @@ export default function ElderlyDetailScreen() {
 
     try {
       if (currentSection === 'medications') {
-        const response = await api.get(`/elderly/${id}/medications`);
-        setMedications(response.data?.items || []);
+        const { data, error } = await supabase
+          .from('medication')
+          .select('*')
+          .eq('elderlyProfileId', id)
+          .order('createdAt', { ascending: false });
+        if (error) throw new Error(error.message);
+        setMedications(data || []);
       } else if (currentSection === 'contacts') {
-        const response = await api.get(`/elderly/${id}/contacts`);
-        setContacts(response.data?.items || []);
+        const { data, error } = await supabase
+          .from('contact')
+          .select('*')
+          .eq('elderlyProfileId', id)
+          .order('createdAt', { ascending: false });
+        if (error) throw new Error(error.message);
+        setContacts(data || []);
       } else if (currentSection === 'agenda') {
-        const response = await api.get(`/elderly/${id}/agenda`);
-        setAgenda(response.data?.items || []);
+        const { data, error } = await supabase
+          .from('agendaevent')
+          .select('*')
+          .eq('elderlyProfileId', id)
+          .order('dateTime', { ascending: true });
+        if (error) throw new Error(error.message);
+        setAgenda(data || []);
       } else if (currentSection === 'history') {
-        const response = await api.get(`/elderly/${id}/medication-history`);
-        setHistory(response.data?.items || []);
+        const { data, error } = await supabase
+          .from('medicationhistory')
+          .select('*, medication(name)')
+          .eq('elderlyProfileId', id)
+          .order('createdAt', { ascending: false });
+        if (error) throw new Error(error.message);
+        setHistory(
+          (data || []).map((h) => ({
+            id: h.id,
+            medicationId: h.medicationId,
+            medicationName: h.medication?.name ?? 'Remédio desconhecido',
+            confirmed: h.confirmed,
+            timestamp: h.createdAt,
+          })) as MedicationHistory[],
+        );
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -70,12 +98,19 @@ export default function ElderlyDetailScreen() {
     }
 
     try {
-      await api.post(`/elderly/${id}/medications`, {
-        name: medName,
-        time: medTime,
-        dosage: medDosage,
-        active: true,
-      });
+      const { error } = await supabase
+        .from('medication')
+        .insert({
+          name: medName,
+          time: medTime,
+          dosage: medDosage,
+          active: true,
+          elderlyProfileId: id,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
       setAddModalVisible(false);
       resetForms();
       loadData();
@@ -91,11 +126,18 @@ export default function ElderlyDetailScreen() {
     }
 
     try {
-      await api.post(`/elderly/${id}/contacts`, {
-        name: contactName,
-        phone: contactPhone,
-        thresholdDays: parseInt(contactThreshold) || 7,
-      });
+      const { error } = await supabase
+        .from('contact')
+        .insert({
+          name: contactName,
+          phone: contactPhone,
+          thresholdDays: parseInt(contactThreshold) || 7,
+          elderlyProfileId: id,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
       setAddModalVisible(false);
       resetForms();
       loadData();
@@ -111,11 +153,18 @@ export default function ElderlyDetailScreen() {
     }
 
     try {
-      await api.post(`/elderly/${id}/agenda`, {
-        description: eventDescription,
-        dateTime: eventDate.toISOString(),
-        reminder: true,
-      });
+      const { error } = await supabase
+        .from('agendaevent')
+        .insert({
+          description: eventDescription,
+          dateTime: eventDate.toISOString(),
+          reminder: true,
+          elderlyProfileId: id,
+        });
+
+      if (error) {
+        throw new Error(error.message);
+      }
       setAddModalVisible(false);
       resetForms();
       loadData();
@@ -135,8 +184,19 @@ export default function ElderlyDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const endpoint = type === 'agenda' ? 'agenda' : type;
-              await api.delete(`/elderly/${id}/${endpoint}/${itemId}`);
+              const tableName = type === 'history' ? 'medicationhistory'
+                : type === 'medications' ? 'medication'
+                : type === 'contacts' ? 'contact'
+                : 'agendaevent';
+
+              const { error } = await supabase
+                .from(tableName)
+                .delete()
+                .eq('id', itemId);
+
+              if (error) {
+                throw new Error(error.message);
+              }
               loadData();
             } catch (error) {
               Alert.alert('Erro', 'Não foi possível excluir');
